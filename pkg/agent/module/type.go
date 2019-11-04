@@ -43,4 +43,5 @@ type InstallConfig struct {
 	Master2Ip            string `json:"master2Ip"`
 	Master1Ip            string `json:"master1Ip"`
 	CommonPassword       string `json:"commonPassword"`
+	ServiceSubnet       string `json:"serviceSubnet"`
 }

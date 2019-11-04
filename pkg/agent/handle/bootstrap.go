@@ -19,14 +19,23 @@ func BootstrapK8s(c *gin.Context) {
 		c.JSON(400, "requet body is not correct.")
 		return
 	}
+
+	_, ok := common.G_JobExcutingInfo[dto.JobId]
+	if ok {
+		c.JSON(200, common.BuildResponse(400, "Job is already Running.Please wait to complete.", nil))
+		return
+	}
+
 	fmt.Println(dto)
 	//bootstrap a k8s
 	go bootstrapK8s(dto)
 
-	c.JSON(200, "OK")
+	c.JSON(200, common.BuildResponse(200, "Job is starting to run.", nil))
 }
 
 func bootstrapK8s(config module.InstallConfig) {
+	// check job is running or not
+
 	if config.IsHa {
 		bootstrapHaK8s(config)
 	} else {
@@ -40,7 +49,7 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 		status    common.Status
 		cmdStr    string
 		sshCmdStr string
-		password  string
+		password  string = config.CommonPassword
 		//t1            *time.Timer
 		cmdStdoutPipe io.ReadCloser
 		cmdStderrPipe io.ReadCloser
@@ -53,15 +62,17 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 		controlPlaneEndpoint           = config.ControlPlaneEndpoint
 		kube_rpm_version               = config.KubeRpmVersion
 		token                          = config.Token
+		serviceSubset                          = config.ServiceSubnet
 		etcdChan             chan bool = make(chan bool)
 	)
 
 	//create job status file
+	common.G_JobExcutingInfo[config.JobId]="created"
 	CreateStatusFile(config.JobId)
 
 	//create ansible hosts file
-	var hostsFile string = "/tmp/" + config.JobId + ".hosts"
-	var logFile string = "/tmp/" + config.JobId + ".log"
+	var hostsFile string = common.HOSTS_DIR + config.JobId + common.HOSTS_FILE_SUFFIX
+	var logFile string = common.LOGS_DIR + config.JobId + common.LOG_FILE_SUFFIX
 	cancelCtx, cancelFunc := context.WithCancel(context.TODO())
 
 	f, err := os.OpenFile(hostsFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
@@ -70,24 +81,30 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 		fmt.Println(err)
 	}
 
-	lines := []string{
-		"[master]",
-		masterIp,
-		"[master:vars]",
-		"lan_registry=" + LanRegistry,
-		"master_ip=" + masterIp,
-		"pod_subnet=" + podSubnet,
-		"control_plane_endpoint=" + controlPlaneEndpoint,
-		"kube_rpm_version=" + kube_rpm_version,
-		"token=" + token,
-		"kubernetes_version=" + kubernetesVersion,
+	if ! config.IsHa {
+		lines := []string{
+			"[master]",
+			masterIp,
+			"[master:vars]",
+			"lan_registry=" + LanRegistry,
+			"master_ip=" + masterIp,
+			"pod_subnet=" + podSubnet,
+			"control_plane_endpoint=" + controlPlaneEndpoint,
+			"kube_rpm_version=" + kube_rpm_version,
+			"token=" + token,
+			"kubernetes_version=" + kubernetesVersion,
+			"service_subnet=" + serviceSubset,
+		}
+		f.WriteString(strings.Join(lines, "\r\n"))
+	} else {
+
 	}
-	f.WriteString(strings.Join(lines, "\r\n"))
+
 	fmt.Println(hostsFile + " is set up.")
 
 	//ensure ssh public key is sent to target host
 	//ssh-public-key.sh 5743138 192.168.25.200 192.168.25.202
-	sshCmdStr = "/tmp/ssh-public-key.sh " + password + " " + masterIp
+	sshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + password + " " + masterIp
 	sshCmd := exec.CommandContext(context.TODO(), "bash", "-c", sshCmdStr)
 	err = sshCmd.Run()
 	if err != nil {
@@ -102,7 +119,7 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 	}
 
 	// core cmd
-	cmdStr = "ansible-playbook /etc/ansible/test.yaml" + " -i " + hostsFile
+	cmdStr = "ansible-playbook " + common.SINGLE_MASTER_BOOTSTRAP_YAML_FILE + " -i " + hostsFile
 	password = config.CommonPassword
 
 	fmt.Println(cmdStr)
@@ -129,6 +146,7 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 		Id:    config.JobId,
 		Phase: "Running",
 	}
+	common.G_JobExcutingInfo[config.JobId]="Running"
 	UpdateStatusFile(status)
 
 	if err != nil {
@@ -151,6 +169,7 @@ FINISH:
 	UploadStatus(config.JobId, status)
 	etcdChan <- true
 	fmt.Println("install job of " + config.JobId + "is done.")
+	delete(common.G_JobExcutingInfo, config.JobId)
 
 }
 

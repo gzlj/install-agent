@@ -18,16 +18,26 @@ const (
 
 	JOB_STATUS_DIR = "/status/"
 
-	JOB_LOG_DIR = "/log/"
+	JOB_LOG_DIR = "/logs/"
 
-	// 保存任务事件
-	JOB_EVENT_SAVE = 1
+	WORKING_DIR = "/etc/ansible/"
 
-	// 删除任务事件
-	JOB_EVENT_DELETE = 2
+	LOGS_DIR = WORKING_DIR + "/logs/"
 
-	// 强杀任务事件
-	JOB_EVENT_KILL = 3
+	STATUS_DIR = WORKING_DIR + "/status/"
+
+	HOSTS_DIR = WORKING_DIR + "/target-hosts/"
+
+	STATUS_FILE_SUFFIX = ".status"
+	LOG_FILE_SUFFIX = ".log"
+	HOSTS_FILE_SUFFIX = ".hosts"
+
+	//ha-master-boostrap.yaml
+	HA_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "/ha-master-boostrap.yaml"
+	//single-master-bootstrap.yaml
+	SINGLE_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "/single-master-bootstrap.yaml"
+	//worker-node-join.yaml
+	WOKER_NODE_JOIN_YAML_FILE = WORKING_DIR + "/worker-node-join.yaml"
 )
 
 var (

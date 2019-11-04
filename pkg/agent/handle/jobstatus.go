@@ -33,7 +33,7 @@ func QueryJobStatus(c *gin.Context) {
 
 func queryJobStatus(jobId string) (status common.Status, err error) {
 	var (
-		statusFile string = "/tmp/" + jobId + ".status"
+		statusFile string = common.STATUS_DIR + jobId + common.STATUS_FILE_SUFFIX
 		bytes      []byte
 	)
 	if bytes, err = ioutil.ReadFile(statusFile); err != nil {
@@ -46,7 +46,7 @@ func queryJobStatus(jobId string) (status common.Status, err error) {
 
 func CreateStatusFile(jobId string) (err error) {
 	var (
-		statusFile string = "/tmp/" + jobId + ".status"
+		statusFile string = common.STATUS_DIR + jobId + common.STATUS_FILE_SUFFIX
 		status     common.Status
 		bytes      []byte
 	)
@@ -74,7 +74,7 @@ func CreateStatusFile(jobId string) (err error) {
 
 func UpdateStatusFile(status common.Status) (err error) {
 	var (
-		statusFile string = "/tmp/" + status.Id + ".status"
+		statusFile string = common.STATUS_DIR + "/" + status.Id + common.STATUS_FILE_SUFFIX
 		bytes      []byte
 	)
 
@@ -94,7 +94,7 @@ func UpdateStatusFile(status common.Status) (err error) {
 
 func UpdateFinalStatus(jobId string) (status common.Status) {
 	var (
-		statusFile string = "/tmp/" + jobId + ".log"
+		statusFile string = common.STATUS_DIR + jobId + common.STATUS_FILE_SUFFIX
 		cmdStr            = "grep failed=0 " + statusFile
 		err        error
 	)
