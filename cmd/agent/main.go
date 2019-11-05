@@ -49,7 +49,6 @@ func (s *APIServer) registryApi() {
 
 func registryBootstrap(r *gin.Engine) {
 	r.POST("/bootstrap", handle.BootstrapK8s)
-	//QueryJobLog
 	r.GET("/log",handle.QueryJobLog)
 	r.GET("/status",handle.QueryJobStatus)
 }

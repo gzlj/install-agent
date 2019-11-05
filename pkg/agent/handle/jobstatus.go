@@ -94,9 +94,9 @@ func UpdateStatusFile(status common.Status) (err error) {
 
 func UpdateFinalStatus(jobId string) (status common.Status) {
 	var (
-		statusFile string = common.STATUS_DIR + jobId + common.STATUS_FILE_SUFFIX
-		cmdStr            = "grep failed=0 " + statusFile
-		err        error
+		logFile string = common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX
+		cmdStr         = "grep failed=0 " + logFile
+		err     error
 	)
 	cmd := exec.CommandContext(context.TODO(), "bash", "-c", cmdStr)
 	fmt.Println("grep cmd str: ", cmdStr)

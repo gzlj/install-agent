@@ -24,20 +24,26 @@ const (
 
 	LOGS_DIR = WORKING_DIR + "/logs/"
 
-	STATUS_DIR = WORKING_DIR + "/status/"
+	STATUS_DIR = WORKING_DIR + "status/"
 
-	HOSTS_DIR = WORKING_DIR + "/target-hosts/"
+	HOSTS_DIR = WORKING_DIR + "target-hosts/"
 
 	STATUS_FILE_SUFFIX = ".status"
 	LOG_FILE_SUFFIX = ".log"
 	HOSTS_FILE_SUFFIX = ".hosts"
 
 	//ha-master-boostrap.yaml
-	HA_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "/ha-master-boostrap.yaml"
+	HA_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "ha-master-boostrap.yaml"
+	HA_MASTER2_JOIN_YAML_FILE = WORKING_DIR + "ha-master2-join.yaml"
+	HA_MASTER3_JOIN_YAML_FILE = WORKING_DIR + "ha-master3-join.yaml"
+	HA_MASTER_JOIN_YAML_FILE = WORKING_DIR + "ha-master-join.yaml"
+
 	//single-master-bootstrap.yaml
 	SINGLE_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "/single-master-bootstrap.yaml"
 	//worker-node-join.yaml
 	WOKER_NODE_JOIN_YAML_FILE = WORKING_DIR + "/worker-node-join.yaml"
+
+
 )
 
 var (
@@ -62,3 +68,12 @@ var (
 	G_done   chan struct{} = make(chan struct{})
 	G_undone chan string   = make(chan string)
 )
+
+type TaskFilesAndCmds struct {
+	TargetHost string
+	HostsFile string
+	Logfile string
+	SshCmdStr string
+	CoreCmdStr string
+	OtherCmdStrs []string
+}

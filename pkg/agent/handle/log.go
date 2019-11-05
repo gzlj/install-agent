@@ -2,6 +2,7 @@ package handle
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/gzlj/install-agent/pkg/common"
 	"io/ioutil"
 )
 
@@ -16,7 +17,7 @@ func QueryJobLogByid(jobId string) (result string) {
 		err   error
 	)
 
-	if bytes, err = ioutil.ReadFile("/tmp/" + jobId + ".log"); err != nil {
+	if bytes, err = ioutil.ReadFile(common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX); err != nil {
 		result = err.Error()
 	}
 	result = string(bytes)
