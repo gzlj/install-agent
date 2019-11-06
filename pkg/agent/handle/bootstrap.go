@@ -26,7 +26,7 @@ func BootstrapK8s(c *gin.Context) {
 		c.JSON(200, common.BuildResponse(400, "Job is already Running.Please wait to complete.", nil))
 		return
 	}
-
+	preWashConfig(&dto)
 	//fmt.Println(dto)
 	//bootstrap a k8s
 	//go bootstrapK8s(dto)
@@ -42,6 +42,13 @@ func bootstrapK8s(config module.InstallConfig) {
 	} else {
 		bootstrapSingleK8s(config)
 	}
+}
+
+func preWashConfig(config *module.InstallConfig) {
+	if config.ControlPlaneEndpoint == "" {
+		config.ControlPlaneEndpoint = config.ApiserverLb + ":" + config.ApiserverLbport
+	}
+
 }
 
 func startTask(config module.InstallConfig) {
@@ -69,7 +76,7 @@ func startTask(config module.InstallConfig) {
 		serviceSubset                          = config.ServiceSubnet
 		//etcdChan             chan bool = make(chan bool)
 
-		targetHost string
+		//targetHost string
 		lines []string
 		f *os.File
 		cancelCtx, _ = context.WithCancel(context.TODO())
@@ -96,7 +103,7 @@ func startTask(config module.InstallConfig) {
 	// ensure hostsfile and logfile and target host
 	switch config.JobType {
 	case "single-master-bootstrap":
-		lines := []string{
+		lines = []string{
 			"[master]",
 			masterIp,
 			"[master:vars]",
@@ -109,35 +116,35 @@ func startTask(config module.InstallConfig) {
 			"kubernetes_version=" + kubernetesVersion,
 			"service_subnet=" + serviceSubset,
 		}
-		f.WriteString(strings.Join(lines, "\r\n"))
-		targetHost = masterIp
+		//targetHost = masterIp
 
 	case "worker-node-join":
+		lines = nodeJoinHostsFileContent(config)
 
 	case "ha-master-bootstrap":
 		lines = haMasterHostsFileContent(config)
-		f.WriteString(strings.Join(lines, "\r\n"))
+		//f.WriteString(strings.Join(lines, "\r\n"))
 
 
 	case "ha-master-join":
 
 		lines = haMasterHostsFileContent(config)
-		f.WriteString(strings.Join(lines, "\r\n"))
+		//f.WriteString(strings.Join(lines, "\r\n"))
 
 	default:
 
 	}
-
+	f.WriteString(strings.Join(lines, "\r\n"))
 	// ssh cmd
 	//sshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + password + " " + targetHost
 	//sshCmd := exec.CommandContext(context.TODO(), "bash", "-c", sshCmdStr)
 	//err = sshCmd.Run()
 	err = runAndWait(filesAndCmds.SshCmdStr)
 	if err != nil {
-		fmt.Println("failed to sent ssh public key to target host: ", targetHost)
+		fmt.Println("failed to sent ssh public key to target host: ", filesAndCmds.SshCmdStr)
 		status = common.Status{
 			Code: 500,
-			Err:  "failed to sent ssh public key to target host: " + targetHost,
+			Err:  "failed to sent ssh public key to target host: " + filesAndCmds.SshCmdStr,
 		}
 		fmt.Println(err)
 		goto FINISH
@@ -204,8 +211,16 @@ FINISH:
 
 func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 	lines = []string{
+
+		"[master]",
+		config.Master1Ip,
+		config.Master2Ip,
+		config.Master3Ip,
+
 		"[master1]",
 		config.Master1Ip,
+		"[master1:vars]",
+		"master_role=master1",
 
 		"[master2]",
 		config.Master2Ip,
@@ -229,7 +244,32 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 		"master1_ip=" + config.Master1Ip,
 		"master2_ip=" + config.Master2Ip,
 		"master3_ip=" + config.Master3Ip,
+		"master1_password=" + config.CommonPassword,
 
+	}
+	if len(config.NodesToJoin) > 0 {
+		lines = append(lines, "[node]")
+		for _, node := range config.NodesToJoin {
+			lines = append(lines, node)
+		}
+	}
+	return
+}
+
+func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string){
+	lines = []string{
+		"[all:vars]",
+		"lan_registry=" + config.LanRegistry,
+		"kubernetes_version=" + config.KubernetesVersion,
+		"kube_rpm_version=" + config.KubeRpmVersion,
+		"control_plane_endpoint=" + config.ControlPlaneEndpoint,
+		"token=" + config.Token,
+	}
+	if len(config.NodesToJoin) > 0 {
+		lines = append(lines, "[node]")
+		for _, node := range config.NodesToJoin {
+			lines = append(lines, node)
+		}
 	}
 	return
 }
@@ -243,10 +283,19 @@ func runAndWait(cmdStr string) (err error) {
 func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.TaskFilesAndCmds, err error){
 	filesAndCmds.HostsFile = common.HOSTS_DIR + config.JobId + common.HOSTS_FILE_SUFFIX
 	filesAndCmds.Logfile = common.LOGS_DIR + config.JobId + common.LOG_FILE_SUFFIX
+	var (
+		sshHostsStr string = config.MasterIp + " " + config.Master1Ip + " " + config.Master2Ip + " " + config.Master3Ip
+	)
 	switch config.JobType {
 	case "single-master-bootstrap":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.SINGLE_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + config.MasterIp
+		if len(config.NodesToJoin) > 0 {
+			for _, node := range config.NodesToJoin {
+				sshHostsStr = sshHostsStr + " " + node
+			}
+		}
+		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
+		//filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + config.MasterIp
 	case "worker-node-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		nodes :=""
@@ -257,7 +306,12 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 
 	case "ha-master-bootstrap":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + config.Master1Ip + " " + config.Master2Ip + " " + config.Master3Ip
+		if len(config.NodesToJoin) > 0 {
+			for _, node := range config.NodesToJoin {
+				sshHostsStr = sshHostsStr + " " + node
+			}
+		}
+		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
 		filesAndCmds.OtherCmdStrs = []string{
 			"ansible-playbook " + common.HA_MASTER_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile,
 		}
