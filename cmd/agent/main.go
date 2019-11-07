@@ -3,8 +3,6 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gzlj/install-agent/pkg/agent/handle"
-	"github.com/gzlj/install-agent/pkg/common"
-	"os"
 	"runtime"
 )
 
@@ -48,7 +46,7 @@ func (s *APIServer) registryApi() {
 }
 
 func registryBootstrap(r *gin.Engine) {
-	r.POST("/bootstrap", handle.BootstrapK8s)
+	r.POST("/bootstrap", handle.StartTask)
 	r.GET("/log",handle.QueryJobLog)
 	r.GET("/status",handle.QueryJobStatus)
 }
@@ -63,10 +61,10 @@ func init() {
 		os.Exit(-1)
 	}
 	 */
-	etcdHost := os.Getenv("ETCDHOST")
-	common.InitConfig(etcdHost)
+	//etcdHost := os.Getenv("ETCDHOST")
+	//common.InitConfig(etcdHost)
 	initEnv()
-	handle.InitRegister()
+	//handle.InitRegister()
 }
 
 func main() {

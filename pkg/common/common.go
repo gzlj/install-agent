@@ -75,5 +75,5 @@ type TaskFilesAndCmds struct {
 	Logfile string
 	SshCmdStr string
 	CoreCmdStr string
-	OtherCmdStrs []string
+	//OtherCmdStrs []string
 }

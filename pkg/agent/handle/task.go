@@ -10,10 +10,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
-func BootstrapK8s(c *gin.Context) {
+func StartTask(c *gin.Context) {
 	var dto module.InstallConfig
 	var err error
 	if err = c.ShouldBindJSON(&dto); err != nil {
@@ -34,19 +35,13 @@ func BootstrapK8s(c *gin.Context) {
 	c.JSON(200, common.BuildResponse(200, "Job is starting to run.", nil))
 }
 
-func bootstrapK8s(config module.InstallConfig) {
-	// check job is running or not
-
-	if config.IsHa {
-		bootstrapHaK8s(config)
-	} else {
-		bootstrapSingleK8s(config)
-	}
-}
-
 func preWashConfig(config *module.InstallConfig) {
 	if config.ControlPlaneEndpoint == "" {
-		config.ControlPlaneEndpoint = config.ApiserverLb + ":" + config.ApiserverLbport
+		if config.IsHa || config.JobType == "worker-node-join" {
+			config.ControlPlaneEndpoint = config.ApiserverLb + ":" + config.ApiserverLbport
+		} else {
+			config.ControlPlaneEndpoint = config.Master1Info.Ip + ":" + "6443"
+		}
 	}
 
 }
@@ -66,14 +61,14 @@ func startTask(config module.InstallConfig) {
 		cmdStderrPipe io.ReadCloser
 		cmd           *exec.Cmd
 
-		kubernetesVersion              = config.KubernetesVersion
-		lanRegistry                    = config.LanRegistry
-		masterIp                       = config.MasterIp
-		podSubnet                      = config.PodSubnet
-		controlPlaneEndpoint           = config.ControlPlaneEndpoint
-		kube_rpm_version               = config.KubeRpmVersion
-		token                          = config.Token
-		serviceSubset                          = config.ServiceSubnet
+		//kubernetesVersion              = config.KubernetesVersion
+		//lanRegistry                    = config.LanRegistry
+		//masterIp                       = config.MasterIp
+		//podSubnet                      = config.PodSubnet
+		//controlPlaneEndpoint           = config.ControlPlaneEndpoint
+		//kube_rpm_version               = config.KubeRpmVersion
+		//token                          = config.Token
+		//serviceSubset                          = config.ServiceSubnet
 		//etcdChan             chan bool = make(chan bool)
 
 		//targetHost string
@@ -103,11 +98,11 @@ func startTask(config module.InstallConfig) {
 	// ensure hostsfile and logfile and target host
 	switch config.JobType {
 	case "single-master-bootstrap":
-		lines = []string{
+		/*lines = []string{
 			"[master]",
 			masterIp,
 			"[master:vars]",
-			"lan_registry=" + lanRegistry,
+			//"lan_registry=" + lanRegistry,
 			"master_ip=" + masterIp,
 			"pod_subnet=" + podSubnet,
 			"control_plane_endpoint=" + controlPlaneEndpoint,
@@ -115,7 +110,18 @@ func startTask(config module.InstallConfig) {
 			"token=" + token,
 			"kubernetes_version=" + kubernetesVersion,
 			"service_subnet=" + serviceSubset,
+			"set_private_registry="+ strconv.FormatBool(config.SetUpPrivateRegistry),
+
 		}
+		if config.SetUpPrivateRegistry {
+			lines = append(lines, "private_registry_port=" + strconv.Itoa(config.PrivateRegistryPort))
+			lines = append(lines, "lan_registry=" + masterIp + ":" + strconv.Itoa(config.PrivateRegistryPort))
+		} else {
+			lines = append(lines, "lan_registry=" + lanRegistry)
+		}*/
+
+		lines = singleMasterHostsFileContent(config)
+
 		//targetHost = masterIp
 
 	case "worker-node-join":
@@ -146,24 +152,20 @@ func startTask(config module.InstallConfig) {
 			Code: 500,
 			Err:  "failed to sent ssh public key to target host: " + filesAndCmds.SshCmdStr,
 		}
-		fmt.Println(err)
+		//fmt.Println(err)
 		goto FINISH
 	}
 
 
 
 	// core cmd
-	//cancelFunc = cancelFunc
 	cmd = exec.CommandContext(cancelCtx, "bash", "-c", filesAndCmds.CoreCmdStr)
-
-	//registry installation task to etcd
-	fmt.Println("etcdclient.G_register --:", G_register)
 	cmdStdoutPipe, _ = cmd.StdoutPipe()
 	cmdStderrPipe, _ = cmd.StderrPipe()
 	go syncLog(cmdStdoutPipe, filesAndCmds.Logfile, false)
 	go syncLog(cmdStderrPipe, filesAndCmds.Logfile, false)
 
-	err = cmd.Start()
+
 	fmt.Println("cmd.Start() of " + config.JobId + " is being excuted.")
 	status = common.Status{
 		Code:  200,
@@ -173,67 +175,104 @@ func startTask(config module.InstallConfig) {
 	}
 	common.G_JobExcutingInfo[config.JobId]="Running"
 	UpdateStatusFile(status)
+	err = cmd.Start()
 
 	if err != nil {
 		status = common.Status{
 			Code: 500,
 			Err:  "failed to start task.",
 		}
-		fmt.Println(err)
+		fmt.Println("cmd.Start(): ",err)
 		UpdateStatusFile(status)
 		goto FINISH
 
 	}
 	err = cmd.Wait()
-	fmt.Println(config.JobId+" cmd.Wait(): ", err)
+	//fmt.Println(config.JobId+" cmd.Wait(): ", err)
 
-	if err == nil && config.JobType == "ha-master-bootstrap" {
-		cmd = exec.CommandContext(cancelCtx, "bash", "-c", filesAndCmds.OtherCmdStrs[0])
-		cmdStdoutPipe, _ = cmd.StdoutPipe()
-		cmdStderrPipe, _ = cmd.StderrPipe()
-		go syncLog(cmdStdoutPipe, filesAndCmds.Logfile, true)
-		go syncLog(cmdStderrPipe, filesAndCmds.Logfile, true)
-		err = cmd.Start()
-		err = cmd.Wait()
-		fmt.Println(config.JobId+" other cmd.Wait(): ", err)
-	}
+	//if err == nil && config.JobType == "ha-master-bootstrap" {
+	//	cmd = exec.CommandContext(cancelCtx, "bash", "-c", filesAndCmds.OtherCmdStrs[0])
+	//	cmdStdoutPipe, _ = cmd.StdoutPipe()
+	//	cmdStderrPipe, _ = cmd.StderrPipe()
+	//	go syncLog(cmdStdoutPipe, filesAndCmds.Logfile, true)
+	//	go syncLog(cmdStderrPipe, filesAndCmds.Logfile, true)
+	//	err = cmd.Start()
+	//	err = cmd.Wait()
+	//	fmt.Println(config.JobId+" other cmd.Wait(): ", err)
+	//}
 
 FINISH:
-
-	UploadLog(config.JobId)
 	status = UpdateFinalStatus(config.JobId)
-	UploadStatus(config.JobId, status)
-	//etcdChan <- true
-	fmt.Println("install job of " + config.JobId + "is done.")
+	fmt.Println("install job of " + config.JobId + " is done.")
 
 
 }
 
+func singleMasterHostsFileContent(config module.InstallConfig) (lines []string){
+	lines = []string{
+		"[master]",
+		config.Master1Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master1Info.SshPort) + " hostname=" + config.Master1Info.Hostname,
+		"[all:vars]",
+		"master_ip=" + config.Master1Info.Ip,
+		"pod_subnet=" + config.PodSubnet,
+		"control_plane_endpoint=" + config.ControlPlaneEndpoint,
+		"token=" + config.Token,
+		"kubernetes_version=" + config.KubernetesVersion,
+		"service_subnet=" + config.ServiceSubnet,
+		"set_private_registry="+ strconv.FormatBool(config.SetUpPrivateRegistry),
+	}
+	if config.SetUpPrivateRegistry {
+		lines = append(lines, "private_registry_port=" + strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry=" + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+	} else {
+		lines = append(lines, "lan_registry=" + config.LanRegistry)
+	}
+	if len(config.NodesToJoin) > 0 {
+		lines = append(lines, "[node]")
+		for _, node := range config.NodesToJoin {
+			s := node.Ip + " ansible_ssh_port=" + strconv.Itoa(node.SshPort) + " hostname=" + node.Hostname
+			lines = append(lines, s)
+		}
+	}
+
+	return
+
+}
+
 func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
+
+	master1Str := config.Master1Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master1Info.SshPort) + " hostname=" + config.Master1Info.Hostname
+	master2Str := config.Master2Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master2Info.SshPort) + " hostname=" + config.Master2Info.Hostname
+	master3Str := config.Master3Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master3Info.SshPort) + " hostname=" + config.Master3Info.Hostname
+
+
 	lines = []string{
 
 		"[master]",
-		config.Master1Ip,
-		config.Master2Ip,
-		config.Master3Ip,
+		master1Str,
+		master2Str,
+		master3Str,
 
 		"[master1]",
-		config.Master1Ip,
+		master1Str,
 		"[master1:vars]",
 		"master_role=master1",
+		"set_private_registry="+ strconv.FormatBool(config.SetUpPrivateRegistry),
 
-		"[master2]",
-		config.Master2Ip,
-		"[master2:vars]",
-		"master_role=master2",
-
-		"[master3]",
-		config.Master3Ip,
-		"[master3:vars]",
-		"master_role=master3",
+		//"[master2]",
+		//master2Str,
+		//"[master2:vars]",
+		//"master_role=master2",
+		//
+		//"[master3]",
+		//master3Str,
+		//"[master3:vars]",
+		//"master_role=master3",
+		"[master23]",
+		master2Str + " master_role=master2",
+		master3Str + " master_role=master3",
 
 		"[all:vars]",
-		"lan_registry=" + config.LanRegistry,
 		"kubernetes_version=" + config.KubernetesVersion,
 		"kube_rpm_version=" + config.KubeRpmVersion,
 		"pod_subnet=" + config.PodSubnet,
@@ -241,16 +280,24 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 		"apiserver_lb=" + config.ApiserverLb,
 		"apiserver_lbport=" + config.ApiserverLbport,
 		"token=" + config.Token,
-		"master1_ip=" + config.Master1Ip,
-		"master2_ip=" + config.Master2Ip,
-		"master3_ip=" + config.Master3Ip,
+		"master1_ip=" + config.Master1Info.Ip,
+		"master2_ip=" + config.Master2Info.Ip,
+		"master3_ip=" + config.Master3Info.Ip,
 		"master1_password=" + config.CommonPassword,
-
 	}
+
+	if config.SetUpPrivateRegistry {
+		lines = append(lines, "private_registry_port=" + strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry=" + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+	} else {
+		lines = append(lines, "lan_registry=" + config.LanRegistry)
+	}
+
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
 		for _, node := range config.NodesToJoin {
-			lines = append(lines, node)
+			s := node.Ip + " ansible_ssh_port=" + strconv.Itoa(node.SshPort) + " hostname=" + node.Hostname
+			lines = append(lines, s)
 		}
 	}
 	return
@@ -261,14 +308,18 @@ func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string){
 		"[all:vars]",
 		"lan_registry=" + config.LanRegistry,
 		"kubernetes_version=" + config.KubernetesVersion,
-		"kube_rpm_version=" + config.KubeRpmVersion,
+		//"kube_rpm_version=" + config.KubeRpmVersion,
 		"control_plane_endpoint=" + config.ControlPlaneEndpoint,
-		"token=" + config.Token,
+		//"token=" + config.Token,
+	}
+	if config.Token != "" {
+		lines = append(lines, "token=" + config.Token)
 	}
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
 		for _, node := range config.NodesToJoin {
-			lines = append(lines, node)
+			s := node.Ip + " ansible_ssh_port=" + strconv.Itoa(node.SshPort) + " hostname=" + node.Hostname
+			lines = append(lines, s)
 		}
 	}
 	return
@@ -291,16 +342,16 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.SINGLE_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		if len(config.NodesToJoin) > 0 {
 			for _, node := range config.NodesToJoin {
-				sshHostsStr = sshHostsStr + " " + node
+				sshHostsStr = sshHostsStr + " " + node.Ip
 			}
 		}
 		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
-		//filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + config.MasterIp
+
 	case "worker-node-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		nodes :=""
 		for _, n := range config.NodesToJoin  {
-			nodes = nodes + n + " "
+			nodes = nodes + n.Ip + " "
 		}
 		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + nodes
 
@@ -308,13 +359,10 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		if len(config.NodesToJoin) > 0 {
 			for _, node := range config.NodesToJoin {
-				sshHostsStr = sshHostsStr + " " + node
+				sshHostsStr = sshHostsStr + " " + node.Ip
 			}
 		}
 		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
-		filesAndCmds.OtherCmdStrs = []string{
-			"ansible-playbook " + common.HA_MASTER_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile,
-		}
 
 	case "ha-master-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
@@ -325,7 +373,7 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 	return
 }
 
-
+/*
 func bootstrapSingleK8s(config module.InstallConfig) {
 	var (
 		err       error
@@ -346,7 +394,7 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 		kube_rpm_version               = config.KubeRpmVersion
 		token                          = config.Token
 		serviceSubset                          = config.ServiceSubnet
-		etcdChan             chan bool = make(chan bool)
+		//etcdChan             chan bool = make(chan bool)
 
 
 	)
@@ -414,9 +462,9 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 	cmd = exec.CommandContext(cancelCtx, "bash", "-c", cmdStr)
 
 	//registry installation task to etcd
-	fmt.Println("etcdclient.G_register --:", G_register)
+	//fmt.Println("etcdclient.G_register --:", G_register)
 
-	go G_register.KeepTaskOnline(config.JobId, etcdChan)
+	//go G_register.KeepTaskOnline(config.JobId, etcdChan)
 
 	cmdStdoutPipe, _ = cmd.StdoutPipe()
 	cmdStderrPipe, _ = cmd.StderrPipe()
@@ -450,19 +498,19 @@ func bootstrapSingleK8s(config module.InstallConfig) {
 
 FINISH:
 	fmt.Println("FINISH: code block ")
-	UploadLog(config.JobId)
+	//UploadLog(config.JobId)
 	status = UpdateFinalStatus(config.JobId)
-	UploadStatus(config.JobId, status)
+	//UploadStatus(config.JobId, status)
 	//etcdChan <- true
 	fmt.Println("install job of " + config.JobId + "is done.")
 }
 
 func bootstrapHaK8s(config module.InstallConfig) {
 
-}
+}*/
 
 func syncLog(reader io.ReadCloser, file string, append bool) {
-	fmt.Println("start syncLog()")
+	//fmt.Println("start syncLog()")
 	/*	scanner := bufio.NewScanner(reader)
 		for scanner.Scan() { // 命令在执行的过程中, 实时地获取其输出
 			data, err := simplifiedchinese.GB18030.NewDecoder().Bytes(scanner.Bytes()) // 防止乱码
@@ -474,7 +522,7 @@ func syncLog(reader io.ReadCloser, file string, append bool) {
 			fmt.Printf("%s\n", string(data))
 		}*/
 	var (
-	f *os.File
+		f *os.File
 	)
 	if append {
 		f, _ = os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -487,8 +535,6 @@ func syncLog(reader io.ReadCloser, file string, append bool) {
 		strNum, err := reader.Read(buf)
 
 		if err != nil {
-			fmt.Println(err)
-
 			//读到结尾
 			if err == io.EOF || strings.Contains(err.Error(), "file already closed") {
 				//err = nil
@@ -497,10 +543,5 @@ func syncLog(reader io.ReadCloser, file string, append bool) {
 		}
 		outputByte := buf[:strNum]
 		f.WriteString(string(outputByte))
-		// TODO:
-		// post to master process log api
 	}
-
-	fmt.Println("stop syncLog()")
-	//worker.G_done <- struct{}{}
 }

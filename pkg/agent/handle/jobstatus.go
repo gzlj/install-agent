@@ -99,10 +99,10 @@ func UpdateFinalStatus(jobId string) (status common.Status) {
 		err     error
 	)
 	cmd := exec.CommandContext(context.TODO(), "bash", "-c", cmdStr)
-	fmt.Println("grep cmd str: ", cmdStr)
+	//fmt.Println("grep cmd str: ", cmdStr)
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Println(err)
 		status = common.Status{
 			Code:  500,
 			Err:   "Some error happened.Please check log file.",

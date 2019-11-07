@@ -45,5 +45,18 @@ type InstallConfig struct {
 	CommonPassword       string `json:"commonPassword"`
 	ServiceSubnet       string `json:"serviceSubnet"`
 	JobType string `json:"jobType"`
-	NodesToJoin  []string `json:"nodesToJoin"`
+	NodesToJoin  []NodeInfo `json:"nodesToJoin"`
+	SetUpPrivateRegistry bool `json:"setUpPrivateRegistry"`
+	PrivateRegistryPort int `json:"privateRegistryPort"`
+
+	Master1Info NodeInfo `json:"master1Info"`
+	Master2Info NodeInfo `json:"master2Info"`
+	Master3Info NodeInfo `json:"master3Info"`
+
+}
+
+type NodeInfo struct {
+	Hostname string `json:"hostname"`
+	Ip  string `json:"ip"`
+	SshPort int `json:"sshPort"`
 }
