@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gzlj/install-agent/pkg/agent/handle"
+	"github.com/gzlj/install-agent/pkg/common"
+	"os"
 	"runtime"
 )
 
@@ -49,6 +51,7 @@ func registryBootstrap(r *gin.Engine) {
 	r.POST("/bootstrap", handle.StartTask)
 	r.GET("/log",handle.QueryJobLog)
 	r.GET("/status",handle.QueryJobStatus)
+	r.GET("/config",handle.ShowConfig)
 }
 
 func init() {
@@ -64,8 +67,20 @@ func init() {
 	//etcdHost := os.Getenv("ETCDHOST")
 	//common.InitConfig(etcdHost)
 	initEnv()
+	configFile := os.Getenv("CONFIGFILE")
+	common.InitConfig(configFile)
+
+	
 	//handle.InitRegister()
 }
+//
+//func initConfig(file string) (err error){
+//	if file == "" {
+//		file = "/etc/ansible/config.json"
+//	}
+//
+//	return
+//}
 
 func main() {
 
