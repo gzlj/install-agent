@@ -175,6 +175,7 @@ func startTask(config module.InstallConfig) {
 	}
 	common.G_JobExcutingInfo[config.JobId]="Running"
 	UpdateStatusFile(status)
+	UpdateStatusInoracle(status)
 	err = cmd.Start()
 
 	if err != nil {
@@ -203,6 +204,7 @@ func startTask(config module.InstallConfig) {
 
 FINISH:
 	status = UpdateFinalStatus(config.JobId)
+	UpdateStatusInoracle(status)
 	fmt.Println("install job of " + config.JobId + " is done.")
 
 

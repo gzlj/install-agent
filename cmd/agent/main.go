@@ -48,10 +48,12 @@ func (s *APIServer) registryApi() {
 }
 
 func registryBootstrap(r *gin.Engine) {
-	r.POST("/bootstrap", handle.StartTask)
+	r.POST("/start", handle.StartTask)
 	r.GET("/log",handle.QueryJobLog)
 	r.GET("/status",handle.QueryJobStatus)
 	r.GET("/config",handle.ShowConfig)
+	r.GET("/liststatus",handle.ListJobStatuses)
+	//r.GET("/updatestatus",handle.UpdateJobStatuse)
 }
 
 func init() {
@@ -70,7 +72,14 @@ func init() {
 	configFile := os.Getenv("CONFIGFILE")
 	common.InitConfig(configFile)
 
-	
+	ip := os.Getenv("ORACLE_SERVER_IP")
+	port := os.Getenv("ORACLE_SERVER_PORT")
+	//ip string, port string, dbName, user, passwd string
+	dbName := os.Getenv("DB_NAME")
+	user := os.Getenv("ORACLE_USER")
+	passwd := os.Getenv("ORACLE_PASSWORD")
+
+	common.InitOracleDb(ip, port, dbName, user, passwd)
 	//handle.InitRegister()
 }
 //
