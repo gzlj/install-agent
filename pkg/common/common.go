@@ -70,10 +70,10 @@ var (
 )
 
 type TaskFilesAndCmds struct {
-	TargetHost string
+	TargetHosts []string
 	HostsFile string
 	Logfile string
-	SshCmdStr string
+	//SshCmdStr string
 	CoreCmdStr string
 	//OtherCmdStrs []string
 }

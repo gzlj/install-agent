@@ -17,9 +17,12 @@ type Oracle struct {
 }
 
 func InitOracleDb(ip, port , dbName, user, passwd string) (err error){
-	fmt.Sprintf("%s/%s@%s:%s/%s", user, passwd, ip, port, dbName)
+	dataSource := fmt.Sprintf("%s/%s@%s:%s/%s", user, passwd, ip, port, dbName)
 	//db, err := sql.Open("oci8", fmt.Sprintf("%s/%s@%s:%s/%s", user, passwd, ip, port, dbName))
-	db, err := sql.Open("goracle", "LY_MSSP/LY_MSSP@192.168.30.60:1521/orclpdb")
+
+
+	//db, err := sql.Open("goracle", "LY_MSSP/LY_MSSP@192.168.30.60:1521/orclpdb")
+	db, err := sql.Open("goracle", dataSource)
 	if err != nil {
 		log.Fatal(err)
 		return

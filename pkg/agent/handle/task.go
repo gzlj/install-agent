@@ -145,7 +145,9 @@ func startTask(config module.InstallConfig) {
 	//sshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + password + " " + targetHost
 	//sshCmd := exec.CommandContext(context.TODO(), "bash", "-c", sshCmdStr)
 	//err = sshCmd.Run()
-	err = runAndWait(filesAndCmds.SshCmdStr)
+	//fmt.Println("filesAndCmds.SshCmdStr: ", filesAndCmds.SshCmdStr)
+	//err = runAndWait(filesAndCmds.SshCmdStr)
+	err = runSsh(config.CommonPassword, filesAndCmds)
 	if err != nil {
 		fmt.Println("failed to sent ssh public key to target host: ", filesAndCmds.SshCmdStr)
 		status = common.Status{
@@ -203,11 +205,25 @@ func startTask(config module.InstallConfig) {
 	//}
 
 FINISH:
-	status = UpdateFinalStatus(config.JobId)
-	UpdateStatusInoracle(status)
+	status = UpdateFinalStatus(config.JobId, err)
+	err = UpdateStatusInoracle(status)
+	if err != nil {
+		fmt.Println("oracle error: ", err)
+	}
 	fmt.Println("install job of " + config.JobId + " is done.")
 
 
+}
+
+func runSsh(password string, filesAndCmds common.TaskFilesAndCmds) (err error){
+	for _, host := range filesAndCmds.TargetHosts {
+		cmdstr := common.WORKING_DIR + "ssh-public-key.sh " + "'" + password + "' " + host
+		err = runAndWait(cmdstr)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func singleMasterHostsFileContent(config module.InstallConfig) (lines []string){
@@ -336,42 +352,49 @@ func runAndWait(cmdStr string) (err error) {
 func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.TaskFilesAndCmds, err error){
 	filesAndCmds.HostsFile = common.HOSTS_DIR + config.JobId + common.HOSTS_FILE_SUFFIX
 	filesAndCmds.Logfile = common.LOGS_DIR + config.JobId + common.LOG_FILE_SUFFIX
-	var (
-		sshHostsStr string = config.MasterIp + " " + config.Master1Ip + " " + config.Master2Ip + " " + config.Master3Ip
-	)
+	var targeHosts []string
+	if config.Master1Info.Ip != "" {
+		targeHosts = append(targeHosts, config.Master1Info.Ip)
+	}
+	if config.Master2Info.Ip != "" {
+		targeHosts = append(targeHosts, config.Master2Info.Ip)
+	}
+	if config.Master3Info.Ip != "" {
+		targeHosts = append(targeHosts, config.Master3Info.Ip)
+	}
+
+	//fmt.Println("config module.InstallConfig", config)
+	//fmt.Println("var sshHostsStr: ", sshHostsStr)
 	switch config.JobType {
 	case "single-master-bootstrap":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.SINGLE_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		if len(config.NodesToJoin) > 0 {
 			for _, node := range config.NodesToJoin {
-				sshHostsStr = sshHostsStr + " " + node.Ip
+				targeHosts = append(targeHosts, node.Ip)
 			}
 		}
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
 
 	case "worker-node-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
-		nodes :=""
-		for _, n := range config.NodesToJoin  {
-			nodes = nodes + n.Ip + " "
+		//nodes :=""
+		for _, node := range config.NodesToJoin  {
+			targeHosts = append(targeHosts, node.Ip)
 		}
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + nodes
 
 	case "ha-master-bootstrap":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_BOOTSTRAP_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		if len(config.NodesToJoin) > 0 {
 			for _, node := range config.NodesToJoin {
-				sshHostsStr = sshHostsStr + " " + node.Ip
+				targeHosts = append(targeHosts, node.Ip)
 			}
 		}
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + sshHostsStr
 
 	case "ha-master-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
-		filesAndCmds.SshCmdStr = common.WORKING_DIR + "ssh-public-key.sh " + config.CommonPassword + " " + config.Master2Ip + " " + config.Master3Ip
 	default:
 		err = errors.New("Job type must be one of single-master-bootstrap, worker-node-join, ha-master-bootstrap, ha-master-join.")
 	}
+	filesAndCmds.TargetHosts = targeHosts
 	return
 }
 

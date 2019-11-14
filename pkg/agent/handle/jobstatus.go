@@ -1,14 +1,12 @@
 package handle
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gzlj/install-agent/pkg/common"
 	"io/ioutil"
 	"os"
-	"os/exec"
 )
 
 func QueryJobStatus(c *gin.Context) {
@@ -44,12 +42,12 @@ func ListJobStatuses(c *gin.Context) {
 	c.JSON(200, statuses)
 }
 
-//func UpdateJobStatuse(c *gin.Context) {
-//	common.G_OracleDb.UpdateJobStatus("5555", "haha")
-//
-//
-//	c.JSON(200, nil)
-//}
+func UpdateJobStatuse(c *gin.Context) {
+	common.G_OracleDb.UpdateJobStatus("5555", "haha")
+
+
+	c.JSON(200, nil)
+}
 
 func queryJobStatus(jobId string) (status common.Status, err error) {
 	var (
@@ -145,26 +143,28 @@ func UpdateStatusFile(status common.Status) (err error) {
 
 func UpdateStatusInoracle(status common.Status) (err error) {
 	//common.G_OracleDb.UpdateJobStatus("5555", "haha")
-	common.G_OracleDb.UpdateJobStatus(status.Id, status.Phase)
+	err = common.G_OracleDb.UpdateJobStatus(status.Id, status.Phase)
 	return
 }
 
 
-func UpdateFinalStatus(jobId string) (status common.Status) {
-	var (
+func UpdateFinalStatus(jobId string, err error) (status common.Status) {
+	/*var (
 		logFile string = common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX
 		cmdStr         = "grep failed=0 " + logFile
 		err     error
 	)
 	cmd := exec.CommandContext(context.TODO(), "bash", "-c", cmdStr)
 	//fmt.Println("grep cmd str: ", cmdStr)
-	err = cmd.Run()
+
+
+	err = cmd.Run()*/
 	if err != nil {
 		//fmt.Println(err)
 		status = common.Status{
 			Code:  500,
 			Err:   "Some error happened.Please check log file.",
-			Phase: "exited",
+			Phase: "failed",
 			Id:    jobId,
 		}
 	} else {

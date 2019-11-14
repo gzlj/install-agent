@@ -39,9 +39,9 @@ type InstallConfig struct {
 	Token                string `json:"token"`
 	ApiserverLbport      string `json:"apiserverLbport"`
 	LbInterface          string `json:"lbInterface"`
-	Master3Ip            string `json:"master3Ip"`
-	Master2Ip            string `json:"master2Ip"`
-	Master1Ip            string `json:"master1Ip"`
+	//Master3Ip            string `json:"master3Ip"`
+	//Master2Ip            string `json:"master2Ip"`
+	//Master1Ip            string `json:"master1Ip"`
 	CommonPassword       string `json:"commonPassword"`
 	ServiceSubnet       string `json:"serviceSubnet"`
 	JobType string `json:"jobType"`
