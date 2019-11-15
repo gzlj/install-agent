@@ -42,12 +42,12 @@ func ListJobStatuses(c *gin.Context) {
 	c.JSON(200, statuses)
 }
 
-func UpdateJobStatuse(c *gin.Context) {
-	common.G_OracleDb.UpdateJobStatus("5555", "haha")
-
-
-	c.JSON(200, nil)
-}
+//func UpdateJobStatuse(c *gin.Context) {
+//	common.G_OracleDb.UpdateJobStatus("5555", "haha")
+//
+//
+//	c.JSON(200, nil)
+//}
 
 func queryJobStatus(jobId string) (status common.Status, err error) {
 	var (

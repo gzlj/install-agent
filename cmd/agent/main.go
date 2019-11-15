@@ -53,7 +53,7 @@ func registryBootstrap(r *gin.Engine) {
 	r.GET("/status",handle.QueryJobStatus)
 	r.GET("/config",handle.ShowConfig)
 	r.GET("/liststatus",handle.ListJobStatuses)
-	r.GET("/updatestatus",handle.UpdateJobStatuse)
+	//r.GET("/updatestatus",handle.UpdateJobStatuse)
 }
 
 func init() {

@@ -149,10 +149,10 @@ func startTask(config module.InstallConfig) {
 	//err = runAndWait(filesAndCmds.SshCmdStr)
 	err = runSsh(config.CommonPassword, filesAndCmds)
 	if err != nil {
-		fmt.Println("failed to sent ssh public key to target host: ", filesAndCmds.SshCmdStr)
+		//fmt.Println("failed to sent ssh public key to target host: ", filesAndCmds.SshCmdStr)
 		status = common.Status{
 			Code: 500,
-			Err:  "failed to sent ssh public key to target host: " + filesAndCmds.SshCmdStr,
+			Err:  "failed to sent ssh public key to target host: ",
 		}
 		//fmt.Println(err)
 		goto FINISH
@@ -218,6 +218,7 @@ FINISH:
 func runSsh(password string, filesAndCmds common.TaskFilesAndCmds) (err error){
 	for _, host := range filesAndCmds.TargetHosts {
 		cmdstr := common.WORKING_DIR + "ssh-public-key.sh " + "'" + password + "' " + host
+		//fmt.Println("ssh cmdstr: ", cmdstr)
 		err = runAndWait(cmdstr)
 		if err != nil {
 			return
