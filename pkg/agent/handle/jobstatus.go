@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gzlj/install-agent/pkg/agent/module"
+	"github.com/gzlj/install-agent/pkg/agent/utils/jobutil"
 	"github.com/gzlj/install-agent/pkg/common"
 	"io/ioutil"
 	"os"
+	"os/exec"
 )
 
 func QueryJobStatus(c *gin.Context) {
@@ -127,28 +130,48 @@ func UpdateStatusFile(status common.Status) (err error) {
 		bytes      []byte
 	)
 
-	f, err := os.OpenFile(statusFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		return
+
+
+	//get job process
+	process := jobutil.GetJobProcess(status.Id)
+
+	if status.Progress < 100 {
+		switch status.JobType {
+		case "single-master-bootstrap":
+			status.Progress = process * 100 / common.SINGEL_MASTER_JOB_TASK_COUNT
+		case "worker-node-join":
+			status.Progress = process * 100 / common.WORKER_NODE_JOIN_JOB_TASK_COUNT
+		case "ha-master-bootstrap":
+			status.Progress = process * 100 / common.HA_MASTER_JOB_TASK_COUNT
+		case "ha-master-join":
+		default:
+		}
 	}
-	defer f.Close()
 
 	if bytes, err = json.Marshal(status); err != nil {
 		fmt.Println("upload job status fail.")
 		return
 	}
+	f, err := os.OpenFile(statusFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	//f, err := os.OpenFile(statusFile, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	//f2, err := os.OpenFile(statusFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	f.WriteString(string(bytes))
+	//f2.Close()
 	return
 }
 
-func UpdateStatusInoracle(status common.Status) (err error) {
+/*func UpdateStatusInoracle(status common.Status) (err error) {
 	//common.G_OracleDb.UpdateJobStatus("5555", "haha")
 	err = common.G_OracleDb.UpdateJobStatus(status.Id, status.Phase)
 	return
-}
+}*/
 
 
-func UpdateFinalStatus(jobId string, err error) (status common.Status) {
+func UpdateFinalStatus(config *module.InstallConfig, err error) (status common.Status) {
 	/*var (
 		logFile string = common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX
 		cmdStr         = "grep failed=0 " + logFile
@@ -161,21 +184,39 @@ func UpdateFinalStatus(jobId string, err error) (status common.Status) {
 	err = cmd.Run()*/
 	if err != nil {
 		//fmt.Println(err)
-		status = common.Status{
-			Code:  500,
-			Err:   "Some error happened.Please check log file.",
-			Phase: "failed",
-			Id:    jobId,
+
+		switch err.(type) {
+		case *exec.ExitError:
+			status = common.Status{
+				Code:  500,
+				Err:   "Job is killed by user.",
+				Phase: "failed",
+				Id:    config.JobId,
+				JobType: config.JobType,
+			}
+		default:
+			status = common.Status{
+				Code:  500,
+				Err:   "Some error happened.Please check log file.",
+				Phase: "failed",
+				Id:    config.JobId,
+				JobType: config.JobType,
+			}
 		}
 	} else {
 		status = common.Status{
 			Code:  200,
 			Err:   "",
 			Phase: "exited",
-			Id:    jobId,
+			Id:    config.JobId,
+			JobType: config.JobType,
+			Progress: 100,
 		}
 	}
-
+	delete(common.G_JobStatus, config.JobId)
 	UpdateStatusFile(status)
 	return
 }
+
+
+

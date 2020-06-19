@@ -1,13 +1,16 @@
 package handle
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gzlj/install-agent/pkg/agent/module"
+	"github.com/gzlj/install-agent/pkg/agent/utils/jobutil"
 	"github.com/gzlj/install-agent/pkg/common"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -43,7 +46,15 @@ func preWashConfig(config *module.InstallConfig) {
 			config.ControlPlaneEndpoint = config.Master1Info.Ip + ":" + "6443"
 		}
 	}
-
+	if config.PodSubnet == "" {
+		config.PodSubnet = "10.244.0.0/16"
+	}
+	if config.ServiceSubnet == "" {
+		config.ServiceSubnet = "10.96.0.0/12"
+	}
+	if config.Token == "" {
+		config.Token = "b99a00.a144ef80536d4344"
+	}
 }
 
 func startTask(config module.InstallConfig) {
@@ -74,14 +85,17 @@ func startTask(config module.InstallConfig) {
 		//targetHost string
 		lines []string
 		f *os.File
-		cancelCtx, _ = context.WithCancel(context.TODO())
+		cancelCtx, cancelFunc = context.WithCancel(context.TODO())
 	)
 
 
 	//hostsFile = filesAndCmds.HostsFile
 	//logFile = filesAndCmds.Logfile
-	common.G_JobExcutingInfo[config.JobId]="created"
+	common.G_JobExcutingInfo[config.JobId] = "created"
+	common.G_JobCancleFuncs[config.JobId] = cancelFunc
+
 	defer delete(common.G_JobExcutingInfo, config.JobId)
+	defer delete(common.G_JobCancleFuncs, config.JobId)
 	CreateStatusFile(config.JobId)
 	filesAndCmds, err = constructFilesAndCmd(config)
 	if err != nil {
@@ -153,6 +167,7 @@ func startTask(config module.InstallConfig) {
 		status = common.Status{
 			Code: 500,
 			Err:  "failed to sent ssh public key to target host: ",
+			JobType: config.JobType,
 		}
 		//fmt.Println(err)
 		goto FINISH
@@ -168,28 +183,38 @@ func startTask(config module.InstallConfig) {
 	go syncLog(cmdStderrPipe, filesAndCmds.Logfile, false)
 
 
-	fmt.Println("cmd.Start() of " + config.JobId + " is being excuted.")
+	//fmt.Println("cmd.Start() of " + config.JobId + " is being excuted.")
+	log.Println("job for cluster " + config.JobId + " is being excuted.")
 	status = common.Status{
 		Code:  200,
 		Err:   "",
 		Id:    config.JobId,
 		Phase: "Running",
+		JobType: config.JobType,
 	}
-	common.G_JobExcutingInfo[config.JobId]="Running"
+	common.G_JobExcutingInfo[config.JobId] = "Running"
+	common.G_JobStatus[config.JobId] = &status
 	UpdateStatusFile(status)
-	UpdateStatusInoracle(status)
+	//UpdateStatusInoracle(status)
 	err = cmd.Start()
 
 	if err != nil {
 		status = common.Status{
 			Code: 500,
 			Err:  "failed to start task.",
+			JobType: config.JobType,
 		}
 		fmt.Println("cmd.Start(): ",err)
+		common.G_JobStatus[config.JobId] = &status
 		UpdateStatusFile(status)
 		goto FINISH
 
 	}
+
+	//new a goroutine to get process and write it to status file
+	go jobutil.SyncJobProcessLoop(status.Id)
+
+
 	err = cmd.Wait()
 	//fmt.Println(config.JobId+" cmd.Wait(): ", err)
 
@@ -205,12 +230,13 @@ func startTask(config module.InstallConfig) {
 	//}
 
 FINISH:
-	status = UpdateFinalStatus(config.JobId, err)
-	err = UpdateStatusInoracle(status)
+	status = UpdateFinalStatus(&config, err)
+	/*err = UpdateStatusInoracle(status)
 	if err != nil {
 		fmt.Println("oracle error: ", err)
-	}
-	fmt.Println("install job of " + config.JobId + " is done.")
+	}*/
+	//fmt.Println("install job of " + config.JobId + " is done.")
+	log.Println("job for cluster " + config.JobId + "  is done.")
 
 
 }
@@ -571,3 +597,56 @@ func syncLog(reader io.ReadCloser, file string, append bool) {
 		f.WriteString(string(outputByte))
 	}
 }
+
+/*func GetJobProcess(c *gin.Context) {
+
+	count := getJobProcess()
+
+	c.JSON(200, common.BuildResponse(200, "", count))
+}*/
+
+func getJobProcess(jobId string) int{
+
+	// file local-192.168.26.200.log
+	var (
+		f *os.File
+		err error
+	)
+	//if bytes, err = ioutil.ReadFile(common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX); err != nil {
+	fileLocation := common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX
+
+	f, err = os.OpenFile(fileLocation, os.O_RDWR, 0666)
+	if err != nil {
+		return 0
+	}
+	return countLines(f)
+	// count
+}
+
+func countLines(file *os.File) (count int){
+
+	input := bufio.NewScanner(file)
+	for input.Scan() {
+		line := input.Text()
+		if strings.HasPrefix(line, "TASK ") {
+			count++
+		}
+	}
+	return
+}
+
+func CancelJob(c *gin.Context) {
+	jobId := c.Query("jobId")
+	if len(jobId) == 0 {
+		c.JSON(400, "Must specify a jobId.")
+		return
+	}
+	var err error
+	err = jobutil.CancelJobById(jobId)
+	if err != nil {
+		c.JSON(500, common.BuildResponse(500, err.Error(), nil))
+		return
+	}
+	c.JSON(200, common.BuildResponse(200, "Job cancled.", nil))
+}
+

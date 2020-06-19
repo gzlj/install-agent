@@ -1,5 +1,5 @@
 package common
-
+/*
 import (
 	"database/sql"
 	"fmt"
@@ -52,5 +52,5 @@ func (o Oracle) UpdateJobStatus(jobId, phase string) (err error ){
 	err = o.sqlExec(sql)
 	return
 }
-
+*/
 

@@ -43,7 +43,9 @@ const (
 	//worker-node-join.yaml
 	WOKER_NODE_JOIN_YAML_FILE = WORKING_DIR + "/worker-node-join.yaml"
 
-
+	SINGEL_MASTER_JOB_TASK_COUNT = 33
+	HA_MASTER_JOB_TASK_COUNT = 65
+	WORKER_NODE_JOIN_JOB_TASK_COUNT = 28
 )
 
 var (
@@ -62,6 +64,8 @@ type Status struct {
 	Code  int64  `json:"code"`
 	Phase string `json:"phase"` //created running stopping stoped exiting exited
 	Id    string `json:"id"`
+	JobType string `json:"jobType"`
+	Progress int `json:"progress"`  //100 means 100%
 }
 
 var (
