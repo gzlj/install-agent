@@ -50,6 +50,7 @@ func (s *APIServer) registryApi() {
 func registryBootstrap(r *gin.Engine) {
 	r.POST("/start", handle.StartTask)
 	r.GET("/log",handle.QueryJobLog)
+	r.GET("/kubeconfig",handle.QueryKubeconfig)
 	r.GET("/status",handle.QueryJobStatus)
 	r.GET("/config",handle.ShowConfig)
 	r.GET("/liststatus",handle.ListJobStatuses)

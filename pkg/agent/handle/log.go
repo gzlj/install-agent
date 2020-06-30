@@ -11,6 +11,12 @@ func QueryJobLog(c *gin.Context) {
 	c.String(200, QueryJobLogByid(jobId))
 }
 
+func QueryKubeconfig(c *gin.Context) {
+	jobId := c.Query("jobId")
+	content, _ := QueryKubeconfigFileByid(jobId)
+	c.String(200, content)
+}
+
 func QueryJobLogByid(jobId string) (result string) {
 	var (
 		bytes []byte
@@ -19,6 +25,22 @@ func QueryJobLogByid(jobId string) (result string) {
 
 	if bytes, err = ioutil.ReadFile(common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX); err != nil {
 		result = err.Error()
+	}
+	result = string(bytes)
+	return
+}
+
+func QueryKubeconfigFileByid(jobId string) (result string, err error) {
+	if jobId == "" {
+		result = ""
+		return
+	}
+	var (
+		bytes []byte
+	)
+	if bytes, err = ioutil.ReadFile(common.STATUS_DIR + jobId + common.KUBECONFIG_FILE_SUFFIX); err != nil {
+		result = ""
+		return
 	}
 	result = string(bytes)
 	return

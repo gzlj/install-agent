@@ -231,6 +231,18 @@ func startTask(config module.InstallConfig) {
 
 FINISH:
 	status = UpdateFinalStatus(&config, err)
+	if err == nil {
+		if config.JobType == "single-master-bootstrap" || config.JobType == "ha-master-bootstrap" {
+			err = runAndWait(filesAndCmds.KubeconfigCmdStr)
+			if err != nil {
+				log.Println("KubeconfigCmdStr: ", filesAndCmds.KubeconfigCmdStr)
+				log.Println("cannot get kubeconfig file for cluster " + config.JobId + ": ", err.Error())
+				return
+			}
+		}
+	}
+
+
 	/*err = UpdateStatusInoracle(status)
 	if err != nil {
 		fmt.Println("oracle error: ", err)
@@ -400,6 +412,8 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 				targeHosts = append(targeHosts, node.Ip)
 			}
 		}
+		//ansible 192.168.30.67 -m fetch -a "src=/etc/kubernetes/admin.conf flat=yes dest=/tmp/192.168.30.67-admin.conf"
+		//filesAndCmds.KubeconfigCmdStr = "ansible " + config.ApiserverLb + "m fetch -a 'src=/etc/kubernetes/admin.conf flat=yes dest=" + common.STATUS_DIR  + config.JobId + ".kubeconfig"
 
 	case "worker-node-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
@@ -421,6 +435,7 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 	default:
 		err = errors.New("Job type must be one of single-master-bootstrap, worker-node-join, ha-master-bootstrap, ha-master-join.")
 	}
+	filesAndCmds.KubeconfigCmdStr = "ansible " + config.ApiserverLb + " -m fetch -a 'src=/etc/kubernetes/admin.conf flat=yes dest=" + common.STATUS_DIR  + config.JobId + ".kubeconfig'"+ " -i " + filesAndCmds.HostsFile
 	filesAndCmds.TargetHosts = targeHosts
 	return
 }

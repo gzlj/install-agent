@@ -30,6 +30,7 @@ const (
 
 	STATUS_FILE_SUFFIX = ".status"
 	LOG_FILE_SUFFIX = ".log"
+	KUBECONFIG_FILE_SUFFIX = ".kubeconfig"
 	HOSTS_FILE_SUFFIX = ".hosts"
 
 	//ha-master-boostrap.yaml
@@ -80,4 +81,5 @@ type TaskFilesAndCmds struct {
 	//SshCmdStr string
 	CoreCmdStr string
 	//OtherCmdStrs []string
+	KubeconfigCmdStr string
 }
