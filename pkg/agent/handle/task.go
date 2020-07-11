@@ -63,8 +63,8 @@ func startTask(config module.InstallConfig) {
 		//hostsFile string
 		//logFile string
 		//coreCmdStr string
-		err       error
-		status    common.Status
+		err    error
+		status common.Status
 		//sshCmdStr string
 		//password  string = config.CommonPassword
 		//t1            *time.Timer
@@ -83,11 +83,10 @@ func startTask(config module.InstallConfig) {
 		//etcdChan             chan bool = make(chan bool)
 
 		//targetHost string
-		lines []string
-		f *os.File
+		lines                 []string
+		f                     *os.File
 		cancelCtx, cancelFunc = context.WithCancel(context.TODO())
 	)
-
 
 	//hostsFile = filesAndCmds.HostsFile
 	//logFile = filesAndCmds.Logfile
@@ -101,7 +100,6 @@ func startTask(config module.InstallConfig) {
 	if err != nil {
 		goto FINISH
 	}
-
 
 	f, err = os.OpenFile(filesAndCmds.HostsFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	defer f.Close()
@@ -145,7 +143,6 @@ func startTask(config module.InstallConfig) {
 		lines = haMasterHostsFileContent(config)
 		//f.WriteString(strings.Join(lines, "\r\n"))
 
-
 	case "ha-master-join":
 
 		lines = haMasterHostsFileContent(config)
@@ -161,19 +158,48 @@ func startTask(config module.InstallConfig) {
 	//err = sshCmd.Run()
 	//fmt.Println("filesAndCmds.SshCmdStr: ", filesAndCmds.SshCmdStr)
 	//err = runAndWait(filesAndCmds.SshCmdStr)
+	//runSshForSingleHost
+	if config.JobType == "ha-master-bootstrap" {
+		err = runSshForSingleHost(config.Master1Info.Ip, config.Master1Info.Password)
+		if err != nil {
+			status = common.Status{
+				Code:    500,
+				Err:     "failed to sent ssh public key to target host: ",
+				JobType: config.JobType,
+			}
+			goto FINISH
+		}
+		err = runSshForSingleHost(config.Master2Info.Ip, config.Master2Info.Password)
+		if err != nil {
+			status = common.Status{
+				Code:    500,
+				Err:     "failed to sent ssh public key to target host: ",
+				JobType: config.JobType,
+			}
+			goto FINISH
+		}
+		err = runSshForSingleHost(config.Master3Info.Ip, config.Master3Info.Password)
+		if err != nil {
+			status = common.Status{
+				Code:    500,
+				Err:     "failed to sent ssh public key to target host: ",
+				JobType: config.JobType,
+			}
+			goto FINISH
+		}
+	}
+
 	err = runSsh(config.CommonPassword, filesAndCmds)
 	if err != nil {
 		//fmt.Println("failed to sent ssh public key to target host: ", filesAndCmds.SshCmdStr)
 		status = common.Status{
-			Code: 500,
-			Err:  "failed to sent ssh public key to target host: ",
+			Code:    500,
+			Err:     "failed to sent ssh public key to target host: ",
 			JobType: config.JobType,
 		}
 		//fmt.Println(err)
 		goto FINISH
 	}
-
-
 
 	// core cmd
 	cmd = exec.CommandContext(cancelCtx, "bash", "-c", filesAndCmds.CoreCmdStr)
@@ -182,14 +208,13 @@ func startTask(config module.InstallConfig) {
 	go syncLog(cmdStdoutPipe, filesAndCmds.Logfile, false)
 	go syncLog(cmdStderrPipe, filesAndCmds.Logfile, false)
 
-
 	//fmt.Println("cmd.Start() of " + config.JobId + " is being excuted.")
 	log.Println("job for cluster " + config.JobId + " is being excuted.")
 	status = common.Status{
-		Code:  200,
-		Err:   "",
-		Id:    config.JobId,
-		Phase: "Running",
+		Code:    200,
+		Err:     "",
+		Id:      config.JobId,
+		Phase:   "Running",
 		JobType: config.JobType,
 	}
 	common.G_JobExcutingInfo[config.JobId] = "Running"
@@ -200,11 +225,11 @@ func startTask(config module.InstallConfig) {
 
 	if err != nil {
 		status = common.Status{
-			Code: 500,
-			Err:  "failed to start task.",
+			Code:    500,
+			Err:     "failed to start task.",
 			JobType: config.JobType,
 		}
-		fmt.Println("cmd.Start(): ",err)
+		fmt.Println("cmd.Start(): ", err)
 		common.G_JobStatus[config.JobId] = &status
 		UpdateStatusFile(status)
 		goto FINISH
@@ -213,7 +238,6 @@ func startTask(config module.InstallConfig) {
 
 	//new a goroutine to get process and write it to status file
 	go jobutil.SyncJobProcessLoop(status.Id)
-
 
 	err = cmd.Wait()
 	//fmt.Println(config.JobId+" cmd.Wait(): ", err)
@@ -230,19 +254,18 @@ func startTask(config module.InstallConfig) {
 	//}
 
 FINISH:
-	status = UpdateFinalStatus(&config, err)
+
 	if err == nil {
 		if config.JobType == "single-master-bootstrap" || config.JobType == "ha-master-bootstrap" {
 			err = runAndWait(filesAndCmds.KubeconfigCmdStr)
 			if err != nil {
 				log.Println("KubeconfigCmdStr: ", filesAndCmds.KubeconfigCmdStr)
-				log.Println("cannot get kubeconfig file for cluster " + config.JobId + ": ", err.Error())
+				log.Println("cannot get kubeconfig file for cluster "+config.JobId+": ", err.Error())
 				return
 			}
 		}
 	}
-
-
+	status = UpdateFinalStatus(&config, err)
 	/*err = UpdateStatusInoracle(status)
 	if err != nil {
 		fmt.Println("oracle error: ", err)
@@ -250,10 +273,9 @@ FINISH:
 	//fmt.Println("install job of " + config.JobId + " is done.")
 	log.Println("job for cluster " + config.JobId + "  is done.")
 
-
 }
 
-func runSsh(password string, filesAndCmds common.TaskFilesAndCmds) (err error){
+func runSsh(password string, filesAndCmds common.TaskFilesAndCmds) (err error) {
 	for _, host := range filesAndCmds.TargetHosts {
 		cmdstr := common.WORKING_DIR + "ssh-public-key.sh " + "'" + password + "' " + host
 		//fmt.Println("ssh cmdstr: ", cmdstr)
@@ -265,7 +287,16 @@ func runSsh(password string, filesAndCmds common.TaskFilesAndCmds) (err error){
 	return
 }
 
-func singleMasterHostsFileContent(config module.InstallConfig) (lines []string){
+func runSshForSingleHost(host, password string) (err error) {
+	cmdstr := common.WORKING_DIR + "ssh-public-key.sh " + "'" + password + "' " + host
+	err = runAndWait(cmdstr)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func singleMasterHostsFileContent(config module.InstallConfig) (lines []string) {
 	lines = []string{
 		"[master]",
 		config.Master1Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master1Info.SshPort) + " hostname=" + config.Master1Info.Hostname,
@@ -276,13 +307,13 @@ func singleMasterHostsFileContent(config module.InstallConfig) (lines []string){
 		"token=" + config.Token,
 		"kubernetes_version=" + config.KubernetesVersion,
 		"service_subnet=" + config.ServiceSubnet,
-		"set_private_registry="+ strconv.FormatBool(config.SetUpPrivateRegistry),
+		"set_private_registry=" + strconv.FormatBool(config.SetUpPrivateRegistry),
 	}
 	if config.SetUpPrivateRegistry {
-		lines = append(lines, "private_registry_port=" + strconv.Itoa(config.PrivateRegistryPort))
-		lines = append(lines, "lan_registry=" + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry="+config.Master1Info.Ip+":"+strconv.Itoa(config.PrivateRegistryPort))
 	} else {
-		lines = append(lines, "lan_registry=" + config.LanRegistry)
+		lines = append(lines, "lan_registry="+config.LanRegistry)
 	}
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
@@ -296,12 +327,15 @@ func singleMasterHostsFileContent(config module.InstallConfig) (lines []string){
 
 }
 
-func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
+func haMasterHostsFileContent(config module.InstallConfig) (lines []string) {
 
 	master1Str := config.Master1Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master1Info.SshPort) + " hostname=" + config.Master1Info.Hostname
 	master2Str := config.Master2Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master2Info.SshPort) + " hostname=" + config.Master2Info.Hostname
 	master3Str := config.Master3Info.Ip + " ansible_ssh_port=" + strconv.Itoa(config.Master3Info.SshPort) + " hostname=" + config.Master3Info.Hostname
-
+	master1Password := config.CommonPassword
+	if config.Master1Info.Password != "" {
+		master1Password = config.Master1Info.Password
+	}
 
 	lines = []string{
 
@@ -314,7 +348,7 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 		master1Str,
 		"[master1:vars]",
 		"master_role=master1",
-		"set_private_registry="+ strconv.FormatBool(config.SetUpPrivateRegistry),
+		"set_private_registry=" + strconv.FormatBool(config.SetUpPrivateRegistry),
 
 		//"[master2]",
 		//master2Str,
@@ -340,14 +374,14 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 		"master1_ip=" + config.Master1Info.Ip,
 		"master2_ip=" + config.Master2Info.Ip,
 		"master3_ip=" + config.Master3Info.Ip,
-		"master1_password=" + config.CommonPassword,
+		"master1_password=" + master1Password,
 	}
 
 	if config.SetUpPrivateRegistry {
-		lines = append(lines, "private_registry_port=" + strconv.Itoa(config.PrivateRegistryPort))
-		lines = append(lines, "lan_registry=" + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry="+config.Master1Info.Ip+":"+strconv.Itoa(config.PrivateRegistryPort))
 	} else {
-		lines = append(lines, "lan_registry=" + config.LanRegistry)
+		lines = append(lines, "lan_registry="+config.LanRegistry)
 	}
 
 	if len(config.NodesToJoin) > 0 {
@@ -360,7 +394,7 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string){
 	return
 }
 
-func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string){
+func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string) {
 	lines = []string{
 		"[all:vars]",
 		"lan_registry=" + config.LanRegistry,
@@ -370,7 +404,7 @@ func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string){
 		//"token=" + config.Token,
 	}
 	if config.Token != "" {
-		lines = append(lines, "token=" + config.Token)
+		lines = append(lines, "token="+config.Token)
 	}
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
@@ -388,7 +422,7 @@ func runAndWait(cmdStr string) (err error) {
 	return
 }
 
-func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.TaskFilesAndCmds, err error){
+func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.TaskFilesAndCmds, err error) {
 	filesAndCmds.HostsFile = common.HOSTS_DIR + config.JobId + common.HOSTS_FILE_SUFFIX
 	filesAndCmds.Logfile = common.LOGS_DIR + config.JobId + common.LOG_FILE_SUFFIX
 	var targeHosts []string
@@ -418,7 +452,7 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 	case "worker-node-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
 		//nodes :=""
-		for _, node := range config.NodesToJoin  {
+		for _, node := range config.NodesToJoin {
 			targeHosts = append(targeHosts, node.Ip)
 		}
 
@@ -435,7 +469,9 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 	default:
 		err = errors.New("Job type must be one of single-master-bootstrap, worker-node-join, ha-master-bootstrap, ha-master-join.")
 	}
-	filesAndCmds.KubeconfigCmdStr = "ansible " + config.ApiserverLb + " -m fetch -a 'src=/etc/kubernetes/admin.conf flat=yes dest=" + common.STATUS_DIR  + config.JobId + ".kubeconfig'"+ " -i " + filesAndCmds.HostsFile
+	if config.JobType == "ha-master-bootstrap" || config.JobType == "single-master-bootstrap" {
+		filesAndCmds.KubeconfigCmdStr = "ansible " + config.Master1Info.Ip + " -m fetch -a 'src=/etc/kubernetes/admin.conf flat=yes dest=" + common.STATUS_DIR + config.JobId + ".kubeconfig'" + " -i " + filesAndCmds.HostsFile
+	}
 	filesAndCmds.TargetHosts = targeHosts
 	return
 }
@@ -620,11 +656,11 @@ func syncLog(reader io.ReadCloser, file string, append bool) {
 	c.JSON(200, common.BuildResponse(200, "", count))
 }*/
 
-func getJobProcess(jobId string) int{
+func getJobProcess(jobId string) int {
 
 	// file local-192.168.26.200.log
 	var (
-		f *os.File
+		f   *os.File
 		err error
 	)
 	//if bytes, err = ioutil.ReadFile(common.LOGS_DIR + jobId + common.LOG_FILE_SUFFIX); err != nil {
@@ -638,7 +674,7 @@ func getJobProcess(jobId string) int{
 	// count
 }
 
-func countLines(file *os.File) (count int){
+func countLines(file *os.File) (count int) {
 
 	input := bufio.NewScanner(file)
 	for input.Scan() {
@@ -664,4 +700,3 @@ func CancelJob(c *gin.Context) {
 	}
 	c.JSON(200, common.BuildResponse(200, "Job cancled.", nil))
 }
-

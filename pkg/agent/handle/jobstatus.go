@@ -147,6 +147,12 @@ func UpdateStatusFile(status common.Status) (err error) {
 		default:
 		}
 	}
+	if status.Progress > 100 {
+		status.Progress = 100
+		if status.Phase == "Running" {
+			status.Progress = 99
+		}
+	}
 
 	if bytes, err = json.Marshal(status); err != nil {
 		fmt.Println("upload job status fail.")

@@ -59,4 +59,5 @@ type NodeInfo struct {
 	Hostname string `json:"hostname"`
 	Ip  string `json:"ip"`
 	SshPort int `json:"sshPort"`
+	Password string `json:"password"`
 }

@@ -63,7 +63,7 @@ func ExtractKillerName(killerKey string) string {
 type Status struct {
 	Err   string `json:"err"`
 	Code  int64  `json:"code"`
-	Phase string `json:"phase"` //created running stopping stoped exiting exited
+	Phase string `json:"phase"` //created running stopping stoped exiting exited failed
 	Id    string `json:"id"`
 	JobType string `json:"jobType"`
 	Progress int `json:"progress"`  //100 means 100%
