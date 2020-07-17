@@ -40,7 +40,7 @@ func StartTask(c *gin.Context) {
 
 func preWashConfig(config *module.InstallConfig) {
 	if config.ControlPlaneEndpoint == "" {
-		if config.IsHa || config.JobType == "worker-node-join" {
+		if config.JobType == "ha-master-bootstrap" || config.JobType == "worker-node-join" {
 			config.ControlPlaneEndpoint = config.ApiserverLb + ":" + config.ApiserverLbport
 		} else {
 			config.ControlPlaneEndpoint = config.Master1Info.Ip + ":" + "6443"

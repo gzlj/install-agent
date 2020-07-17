@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"time"
+
 )
 
 func QueryJobStatus(c *gin.Context) {
@@ -28,6 +30,26 @@ func QueryJobStatus(c *gin.Context) {
 		}
 		c.JSON(200, status)
 		return
+	}
+	if status.Code == 0 {
+		memStatus, ok := common.G_JobStatus[jobId]
+		if !ok {
+			status = common.Status{
+				Code: 500,
+				Err:  "Cannot query job status.",
+				Id:   jobId,
+			}
+			c.JSON(200, status)
+			return
+		}
+		status = common.Status{
+			Code: memStatus.Code,
+			Err:  memStatus.Err,
+			Id:   memStatus.Id,
+			JobType: memStatus.JobType,
+			Progress: memStatus.Progress,
+			Phase: memStatus.Phase,
+		}
 	}
 	c.JSON(200, status)
 }
@@ -58,10 +80,20 @@ func queryJobStatus(jobId string) (status common.Status, err error) {
 		bytes      []byte
 	)
 	if bytes, err = ioutil.ReadFile(statusFile); err != nil {
-		return
+		if len(bytes) == 0 {
+			time.Sleep(time.Second * 1)
+			if bytes, err = ioutil.ReadFile(statusFile); err != nil {
+				return
+			}
+		}
+	}
+	if len(bytes) == 0 {
+		time.Sleep(time.Second * 1)
+		if bytes, err = ioutil.ReadFile(statusFile); err != nil {
+			return
+		}
 	}
 	json.Unmarshal(bytes, &status)
-
 	return
 }
 
@@ -195,10 +227,11 @@ func UpdateFinalStatus(config *module.InstallConfig, err error) (status common.S
 		case *exec.ExitError:
 			status = common.Status{
 				Code:  500,
-				Err:   "Job is killed by user.",
+				Err:   "Job is killed by user or Job is exited with non-zero code.",
 				Phase: "failed",
 				Id:    config.JobId,
 				JobType: config.JobType,
+				Progress: 99,
 			}
 		default:
 			status = common.Status{
@@ -207,6 +240,7 @@ func UpdateFinalStatus(config *module.InstallConfig, err error) (status common.S
 				Phase: "failed",
 				Id:    config.JobId,
 				JobType: config.JobType,
+				Progress: 99,
 			}
 		}
 	} else {

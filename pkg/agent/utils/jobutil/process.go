@@ -85,6 +85,11 @@ func QueryJobStatus(jobId string) (status common.Status, err error) {
 }
 
 func UpdateJobProcess(status *common.Status) (err error) {
+
+	if status.Phase == "Running" && status.Progress >= 100 {
+		return
+	}
+
 	var (
 		statusFile string = common.STATUS_DIR + "/" + status.Id + common.STATUS_FILE_SUFFIX
 		bytes      []byte
