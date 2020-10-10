@@ -1,0 +1,3 @@
+#k8s-docker-images.yaml  main.yaml  registry.yaml
+- import_tasks: registry.yaml
+- import_tasks: k8s-docker-images.yaml

@@ -1,0 +1,4 @@
+- name: push monitoring files to remote host 
+  copy:
+    dest: /opt/prometheus-operator.tar.gz
+    src: prometheus-operator.tar.gz

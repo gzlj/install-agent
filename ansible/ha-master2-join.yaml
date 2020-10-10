@@ -1,0 +1,9 @@
+---
+- hosts: master2
+  remote_user: root
+  roles: 
+  - ha-master-join
+- hosts: master3
+  remote_user: root
+  roles: 
+  - ha-master-join

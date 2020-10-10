@@ -1,0 +1,10 @@
+- name: download kubeadm binary
+  shell: |
+    if [[ {{ kubernetes_version }} =~ "1.14" ]]; then
+    rm -fr /opt/kubeadm && docker run --name bu --rm -d -v /opt/kubeadm:/opt/kubeadm gzlj2018/busybox:kubeadm-v1.14.2 
+    fi
+- name: mv kubeadm binary to /usr/bin/
+  shell: | 
+    if [[ {{ kubernetes_version }} =~ "1.14" ]]; then
+    /bin/mv -f /opt/kubeadm/kubeadm /usr/bin/kubeadm
+    fi

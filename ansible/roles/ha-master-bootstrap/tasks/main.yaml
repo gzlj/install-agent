@@ -1,0 +1,11 @@
+- import_tasks: hostname.yaml
+- import_tasks: clean-k8s.yaml
+- import_tasks: install-k8s-rpm.yaml
+- import_tasks: set-up-working-dir.yaml
+- import_tasks: kubeadm-binary.yaml
+- import_tasks: flanneld-conf.yaml
+- import_tasks: calico-conf.yaml
+- import_tasks: monitoring-files.yaml
+- import_tasks: appplan-files.yaml
+- import_tasks: ceph-files.yaml
+- import_tasks: bootstrap-k8s.yaml

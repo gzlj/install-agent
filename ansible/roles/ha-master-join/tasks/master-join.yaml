@@ -1,0 +1,16 @@
+- name: join master into k8s 
+  shell: | 
+    if [[ {{ kubernetes_version }} =~ "1.14" ]]; then
+    timeout 600 /usr/bin/kubeadm join {{ control_plane_endpoint }} --token {{ token }} --discovery-token-unsafe-skip-ca-verification --experimental-control-plane
+    else 
+    timeout 600 /usr/bin/kubeadm join {{ control_plane_endpoint }} --token {{ token }} --discovery-token-unsafe-skip-ca-verification --control-plane
+    fi
+    sleep 15
+    echo "KUBELET_EXTRA_ARGS=--node-ip={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"  > /etc/sysconfig/kubelet
+    systemctl daemon-reload
+    systemctl restart kubelet
+#- name : drop node node-role.kubernetes.io/master- taint
+#  ignore_errors: yes
+#  shell: |
+#    kubectl taint nodes --all node-role.kubernetes.io/master-
+

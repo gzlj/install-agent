@@ -1,0 +1,17 @@
+[master]
+192.168.26.129 ansible_ssh_port=22 hostname=test
+[all:vars]
+master_ip=192.168.26.129
+pod_subnet=10.244.0.0/16
+service_subnet=10.96.0.0/12
+control_plane_endpoint=192.168.26.129:6443
+token=b99a00.a144ef80536d4344
+kubernetes_version=v1.18.5
+service_subnet=10.96.0.0/12
+set_private_registry=true
+private_registry_port=5000
+lan_registry=192.168.26.129:5000
+private_registry_port=5000
+lan_registry=192.168.26.129:5000
+insecure_registries=192.168.39.16:5000,192.168.26.129:5000
+enable_appplan=true

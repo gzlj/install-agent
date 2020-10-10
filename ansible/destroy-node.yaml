@@ -1,0 +1,5 @@
+---
+- hosts: destroynode
+  remote_user: root
+  roles: 
+  - clean

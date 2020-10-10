@@ -1,0 +1,36 @@
+- name: set up aliyun yum kubernetes repo
+  copy:
+    dest: /etc/yum.repos.d/kubernetes.repo
+    content: |
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+      enabled=1
+      gpgcheck=0
+      repo_gpgcheck=0
+      gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+
+- name: set up k8s rpm version shell file 
+  copy:
+    dest: /tmp/getRpmVersion.sh
+    src: getRpmVersion.sh
+- name: get rpm version by k8s version
+  shell: bash /tmp/getRpmVersion.sh {{ kubernetes_version }}
+  register: k8s_version
+- name: download and install k8s rpm
+  shell: |
+    rpms=$( rpm -qa | egrep "kubernetes-cni|kubelet|kubeadm|kubectl" | tr '\n' ' ' )
+    #echo "rpm -e $rpms" | bash
+    [[ -z "$rpms" ]]  || echo "yum remove -y $rpms" | bash
+    if [[ {{ k8s_version.stdout }} =~ "1.18" ]]; then 
+    yum install kubeadm-{{ k8s_version.stdout }} kubelet-{{ k8s_version.stdout }} kubectl-{{ k8s_version.stdout }} -y --setopt=obsoletes=0 --nogpgcheck  
+    else 
+    yum install kubeadm-{{ k8s_version.stdout }} kubelet-{{ k8s_version.stdout }} kubectl-{{ k8s_version.stdout }} kubernetes-cni-0.7.5 -y --setopt=obsoletes=0 --nogpgcheck
+    fi
+    systemctl daemon-reload
+    systemctl enable kubelet
+  retries: 3
+  delay: 3
+  register: result
+  until: result.rc == 0
+  ignore_errors: yes

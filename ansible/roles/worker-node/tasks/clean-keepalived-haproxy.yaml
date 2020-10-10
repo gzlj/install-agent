@@ -1,0 +1,10 @@
+- name: clean haproxy and keepalived
+  shell: |
+    systemctl status keepalived | grep "Active:" | grep running
+    if [[ "$?" == 0 ]]; then systemctl stop keepalived;fi;
+    systemctl is-enabled keepalived
+    if [[ "$?" == 0 ]]; then systemctl disable keepalived;fi;
+    systemctl status haproxy | grep "Active:" | grep running
+    if [[ "$?" == 0 ]]; then systemctl stop haproxy;fi;
+    systemctl is-enabled haproxy
+    if [[ "$?" == 0 ]]; then systemctl disable haproxy;fi;

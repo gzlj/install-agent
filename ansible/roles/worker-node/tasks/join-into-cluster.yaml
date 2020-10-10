@@ -1,0 +1,11 @@
+- name: join into k8s 
+  shell: | 
+    timeout 600 kubeadm join {{ control_plane_endpoint }} --token {{ token | default('b99a00.a144ef80536d4344') }} --discovery-token-unsafe-skip-ca-verification
+    sleep 15
+    systemctl status kubelet | grep "Active:" | grep running
+    if [[ "$?" != 0 ]]; then exit -1;fi;
+    echo "KUBELET_EXTRA_ARGS=--node-ip={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"  > /etc/sysconfig/kubelet
+    systemctl daemon-reload
+    systemctl restart kubelet
+
+

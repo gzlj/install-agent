@@ -1,0 +1,2 @@
+- import_tasks: clean-k8s.yaml
+- import_tasks: clean-keepalived-haproxy.yaml

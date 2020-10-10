@@ -1,0 +1,10 @@
+---
+- hosts: test
+  remote_user: root
+  tasks:
+  - name: execute a script
+    shell: |
+      export str="wo hen shuai."
+      echo $str
+      yum install docker-ce-18.06.0.ce-3.el7 -y
+

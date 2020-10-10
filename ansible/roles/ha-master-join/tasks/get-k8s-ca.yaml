@@ -1,0 +1,18 @@
+- name: ssh public key
+  shell: |
+    ip={{ master1_ip }}
+    password='{{ master1_password }}'
+    mkdir -p /etc/kubernetes/pki/etcd; mkdir -p ~/.kube/
+    yum install sshpass -y
+    [ -f  ~/.ssh/id_rsa ] || ssh-keygen -P "" -f ~/.ssh/id_rsa -t rsa -b 1024
+    /usr/bin/sshpass -p $password ssh-copy-id -o StrictHostKeyChecking=no root@$ip
+    scp root@$ip:/etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/ca.crt
+    scp root@$ip:/etc/kubernetes/pki/etcd/ca.key /etc/kubernetes/pki/etcd/ca.key
+    scp root@$ip:/etc/kubernetes/pki/ca.crt /etc/kubernetes/pki/ca.crt
+    scp root@$ip:/etc/kubernetes/pki/ca.key /etc/kubernetes/pki/ca.key
+    scp root@$ip:/etc/kubernetes/pki/sa.key /etc/kubernetes/pki/sa.key
+    scp root@$ip:/etc/kubernetes/pki/sa.pub /etc/kubernetes/pki/sa.pub
+    scp root@$ip:/etc/kubernetes/pki/front-proxy-ca.crt /etc/kubernetes/pki/front-proxy-ca.crt
+    scp root@$ip:/etc/kubernetes/pki/front-proxy-ca.key /etc/kubernetes/pki/front-proxy-ca.key
+    scp root@$ip:/etc/kubernetes/admin.conf  /etc/kubernetes/admin.conf
+    /bin/cp -f /etc/kubernetes/admin.conf ~/.kube/config

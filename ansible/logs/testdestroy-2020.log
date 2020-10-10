@@ -1,0 +1,16 @@
+[WARNING]: Consider using the file module with state=absent rather than running
+'rm'.  If you need to use command because file is insufficient you can add
+'warn: false' to this command task or set 'command_warnings=False' in
+ansible.cfg to get rid of this message.
+**********************
+changed: [192.168.26.135]
+changed: [192.168.26.132]
+
+TASK [clean : clean haproxy and keepalived] ************************************
+changed: [192.168.26.132]
+changed: [192.168.26.135]
+
+PLAY RECAP *********************************************************************
+192.168.26.132             : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+192.168.26.135             : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

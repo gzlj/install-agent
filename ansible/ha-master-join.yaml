@@ -1,0 +1,16 @@
+---
+- hosts: master2
+  remote_user: root
+  roles: 
+  - ceph-common
+  - ha-master-join
+- hosts: master3
+  remote_user: root
+  roles: 
+  - ceph-common
+  - ha-master-join
+- hosts: node
+  remote_user: root
+  roles: 
+  - ceph-common
+  - worker-node

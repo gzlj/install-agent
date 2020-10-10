@@ -1,0 +1,8 @@
+---
+#keepalived-haproxy
+- hosts: registry
+  remote_user: root
+  roles:
+#  - common
+#  - docker
+  - private-registry

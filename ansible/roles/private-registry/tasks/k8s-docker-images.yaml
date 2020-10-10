@@ -1,0 +1,30 @@
+- name: download and push k8s docker images
+  shell: |
+    imageStr={{ kubernetes_version }}    
+      for i in $( echo $imageStr | tr "," " " );do 
+      touch /tmp/$i.txt
+      images=(pause:3.1 kube-proxy:$i kube-scheduler:$i kube-controller-manager:$i kube-apiserver:$i etcd:3.3.10 coredns:1.3.1 pause:3.2 etcd:3.4.3-0 coredns:1.6.7)
+      for imageName in ${images[@]} ; do
+      #if [ $( docker images | grep "{{ lan_registry }}/$imageName" | wc -l ) -eq 0 ]; then
+        docker pull registry.aliyuncs.com/k8sxio/$imageName
+        docker tag registry.aliyuncs.com/k8sxio/$imageName {{ lan_registry }}/$imageName
+        docker push {{ lan_registry }}/$imageName
+      #fi
+      done
+      #docker pull coredns/coredns:1.3.1
+      #docker tag coredns/coredns:1.3.1 {{ lan_registry }}/coredns:1.3.1
+      #docker push {{ lan_registry }}/coredns:1.3.1
+    done
+
+
+#    images=(pause:3.1 kube-proxy:{{ kubernetes_version }} kube-scheduler:{{ kubernetes_version }} kube-controller-manager:{{ kubernetes_version }} kube-apiserver:{{ kubernetes_version }} etcd:3.3.10)
+#    for imageName in ${images[@]} ; do
+#    if [ $( docker images | grep "{{ lan_registry }}/$imageName" | wc -l ) -eq 0 ]; then
+#      docker pull mirrorgooglecontainers/$imageName
+#      docker tag mirrorgooglecontainers/$imageName {{ lan_registry }}/$imageName
+#      docker push {{ lan_registry }}/$imageName
+#    fi
+#    done
+#    docker pull coredns/coredns:1.3.1
+#    docker tag coredns/coredns:1.3.1 {{ lan_registry }}/coredns:1.3.1
+#    docker push {{ lan_registry }}/coredns:1.3.1

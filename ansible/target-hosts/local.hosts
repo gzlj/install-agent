@@ -1,0 +1,13 @@
+[master]
+192.168.26.200 ansible_ssh_port=22 hostname=dn3
+[all:vars]
+master_ip=192.168.26.200
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.26.200:6443
+token=b99a00.a144ef80536d4344
+kubernetes_version=v1.14.2
+service_subnet=10.96.0.0/12
+set_private_registry=false
+lan_registry=192.168.30.67:5000
+[node]
+192.168.26.129 ansible_ssh_port=22 hostname=nn2

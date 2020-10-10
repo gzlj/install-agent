@@ -1,0 +1,3 @@
+[destroynode]
+192.168.26.132 ansible_ssh_port=22
+192.168.26.135 ansible_ssh_port=22

@@ -1,0 +1,10 @@
+- import_tasks: hostname.yaml
+- import_tasks: clean-keepalived-haproxy.yaml
+- import_tasks: clean-k8s.yaml
+- import_tasks: set-up-working-dir.yaml
+- import_tasks: install-kubelet-rpm.yaml
+- import_tasks: rm-kubernetes-repo.yaml
+- import_tasks: kubeadm-binary.yaml
+- import_tasks: join-into-cluster.yaml
+#- import_tasks: reset-10-kubeadm.yaml
+- import_tasks: restart-kubelet.yaml

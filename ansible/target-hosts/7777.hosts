@@ -1,0 +1,12 @@
+[master]
+ ansible_ssh_port=0 hostname=
+[all:vars]
+master_ip=
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=:6443
+token=b99a00.a144ef80536d4344
+kubernetes_version=v1.18.5
+service_subnet=10.96.0.0/12
+set_private_registry=true
+private_registry_port=5000
+lan_registry=:5000

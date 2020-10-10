@@ -1,0 +1,26 @@
+[master]
+192.168.26.129 ansible_ssh_port=22 hostname=mon1
+192.168.26.200 ansible_ssh_port=22 hostname=mon2
+192.168.26.202 ansible_ssh_port=22 hostname=mon3
+[master1]
+192.168.26.129 ansible_ssh_port=22 hostname=mon1
+[master1:vars]
+master_role=master1
+set_private_registry=false
+[master23]
+192.168.26.200 ansible_ssh_port=22 hostname=mon2 master_role=master2
+192.168.26.202 ansible_ssh_port=22 hostname=mon3 master_role=master3
+[all:vars]
+kubernetes_version=v1.18.5
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.26.130:16443
+apiserver_lb=192.168.26.130
+apiserver_lbport=16443
+token=b99a00.a144ef80536d4344
+master1_ip=192.168.26.129
+master2_ip=192.168.26.200
+master3_ip=192.168.26.202
+master1_password=5743138
+lan_registry=192.168.30.67:5000
+insecure_registries=192.168.30.67:5000,192.168.35.105:5000
+enable_appplan=true

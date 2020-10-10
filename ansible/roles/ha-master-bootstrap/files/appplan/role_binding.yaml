@@ -1,0 +1,12 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: appplan
+subjects:
+- kind: ServiceAccount
+  name: appplan
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: appplan
+  apiGroup: rbac.authorization.k8s.io

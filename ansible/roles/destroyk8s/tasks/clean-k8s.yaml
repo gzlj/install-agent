@@ -1,0 +1,13 @@
+#  - name: get k8s node ip
+#    ignore_errors: yes
+#    shell: |
+#      kubectl get nodes -o wide | sed 1d | awk '{print $6}'
+#    register: result
+#    failed_when: false
+  - name: clean k8s
+    ignore_errors: yes
+    shell: |
+      echo y | kubeadm reset
+      ip link delete cni0
+      rm -fr /etc/kubernetes /etc/cni/* /var/lib/etcd /var/lib/cni/* /etc/cni/net.d/* ~/.kube
+

@@ -1,0 +1,29 @@
+[master]
+192.168.26.129 ansible_ssh_port=22 hostname=master1
+192.168.26.132 ansible_ssh_port=22 hostname=master2
+192.168.26.133 ansible_ssh_port=22 hostname=master3
+[master1]
+192.168.26.129 ansible_ssh_port=22 hostname=master1
+[master1:vars]
+master_role=master1
+set_private_registry=true
+[master23]
+192.168.26.132 ansible_ssh_port=22 hostname=master2 master_role=master2
+192.168.26.133 ansible_ssh_port=22 hostname=master3 master_role=master3
+[all:vars]
+kubernetes_version=v1.18.5
+kube_rpm_version=
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.26.250:16443
+apiserver_lb=192.168.26.250
+apiserver_lbport=16443
+token=b99a00.a144ef80536d4344
+master1_ip=192.168.26.129
+master2_ip=192.168.26.132
+master3_ip=192.168.26.133
+master1_password=5743138
+private_registry_port=5000
+lan_registry=192.168.26.129:5000
+insecure_registries=192.168.39.16:5000,192.168.39.36:5000,192.168.26.129:5000
+enable_appplan=true
+cluster_name=hello

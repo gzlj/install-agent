@@ -1,0 +1,16 @@
+---
+- hosts: test
+  remote_user: root
+  tasks:
+  - name: execute a script
+    shell: |
+      docker ps | grep 5000.*registry > /dev/null 2>&1 && exit 0
+      docker run -d -p 5000:5000 -e REGISTRY_STORAGE_DELETE_ENABLED=true -v /home/data/registrydata/:/var/lib/registry --restart=always --name registry ocscaas/registry:2.6.2
+      while :
+      do
+          docker ps | grep 5000.*registry > /dev/null 2>&1 && break || sleep 5
+      done
+      sleep 5
+      
+     
+

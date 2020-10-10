@@ -1,0 +1,13 @@
+- name: echo master ip to /etc/hosts
+  shell: |
+    cat > /etc/hosts << EOF
+    127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+    ::1       localhost localhost.localdomain localhost6 localhost6.localdomain6
+    {{ master1_ip }} master1
+    {{ master2_ip }} master2
+    {{ master3_ip }} master3
+    EOF
+    #grep "{{ master1_ip }} master1" /etc/hosts > /dev/null 2>&1 || echo "{{ master1_ip }} master1" >> /etc/hosts
+    #grep "{{ master2_ip }} master2" /etc/hosts > /dev/null 2>&1 || echo "{{ master2_ip }} master2" >> /etc/hosts
+    #grep "{{ master3_ip }} master3" /etc/hosts > /dev/null 2>&1 || echo "{{ master3_ip }} master3" >> /etc/hosts
+

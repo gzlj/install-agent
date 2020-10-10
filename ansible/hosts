@@ -1,0 +1,121 @@
+## This is the default ansible 'hosts' file.
+##
+## It should live in /etc/ansible/hosts
+##
+##   - Comments begin with the '#' character
+##   - Blank lines are ignored
+##   - Groups of hosts are delimited by [header] elements
+##   - You can enter hostnames or ip addresses
+##   - A hostname/ip can be a member of multiple groups
+#
+## Ex 1: Ungrouped hosts, specify before any group headers.
+#
+### green.example.com
+### blue.example.com
+### 192.168.100.1
+### 192.168.100.10
+#
+## Ex 2: A collection of hosts belonging to the 'webservers' group
+#
+### [webservers]
+### alpha.example.org
+### beta.example.org
+### 192.168.1.100
+### 192.168.1.110
+#
+## If you have multiple hosts following a pattern you can specify
+## them like this:
+#
+### www[001:006].example.com
+#
+## Ex 3: A collection of database servers in the 'dbservers' group
+#
+### [dbservers]
+### 
+### db01.intranet.mydomain.net
+### db02.intranet.mydomain.net
+### 10.25.1.56
+### 10.25.1.57
+#
+## Here's another example of host ranges, this time there are no
+## leading 0s:
+#
+### db-[99:101]-node.example.com
+#
+#
+#
+
+[master]
+192.168.30.67
+
+[master1]
+192.168.25.202
+
+[master1:vars]
+lan_registry=192.168.30.67:5000
+master_ip=192.168.25.202
+kubernetes_version=v1.14.2
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.25.199:26443
+kube_rpm_version=1.14.2-0
+apiserver_lb=192.168.25.199
+token=b99a00.a144ef80536d4344
+apiserver_lbport=26443
+#lb_interface=ens33
+master3_ip=192.168.25.200
+master2_ip=192.168.25.201
+master1_ip=192.168.25.202
+
+
+[master2]
+192.168.25.201
+
+[master2:vars]
+lan_registry=192.168.30.67:5000
+master_ip=192.168.25.202
+kubernetes_version=v1.14.2
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.25.199:26443
+kube_rpm_version=1.14.2-0
+apiserver_lb=192.168.25.199
+token=b99a00.a144ef80536d4344
+apiserver_lbport=26443
+#lb_interface=ens33
+master_role=master2
+master3_ip=192.168.25.200
+master2_ip=192.168.25.201
+master1_ip=192.168.25.202
+master1_password=5743138
+
+
+[master3]
+192.168.25.200
+
+[master3:vars]
+lan_registry=192.168.30.67:5000
+kubernetes_version=v1.14.2
+pod_subnet=10.244.0.0/16
+control_plane_endpoint=192.168.25.199:26443
+kube_rpm_version=1.14.2-0
+apiserver_lb=192.168.25.199
+token=b99a00.a144ef80536d4344
+apiserver_lbport=26443
+#lb_interface=ens33
+master_role=master3
+master3_ip=192.168.25.200
+master2_ip=192.168.25.201
+master1_ip=192.168.25.202
+master1_password=5743138
+
+
+[node]
+192.168.25.131
+[node:vars]
+lan_registry=192.168.30.67:5000
+kubernetes_version=v1.14.2
+control_plane_endpoint=192.168.25.199:16443
+kube_rpm_version=1.14.2-0
+token=b99a00.a144ef80536d4344
+
+
+

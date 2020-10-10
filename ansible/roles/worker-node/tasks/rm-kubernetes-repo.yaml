@@ -1,0 +1,4 @@
+- name: remove aliyun yum kubernetes repo
+  file:
+    path: /etc/yum.repos.d/kubernetes.repo
+    state: absent

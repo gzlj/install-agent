@@ -1,0 +1,21 @@
+---
+- hosts: master4
+  remote_user: root
+  tasks:
+  - name: set up aliyun yum kubernetes repo
+    copy:
+      dest: /etc/yum.repos.d/kubernetes.repo
+      content: |
+        [kubernetes]
+        name=Kubernetes
+        baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64
+        enabled=1
+        gpgcheck=0
+        repo_gpgcheck=0
+        gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+  - name: download k8s rpm
+    shell: |
+      rpms=$( rpm -qa | egrep "kubernetes-cni|kubelet|kubeadm|kubectl" | tr '\n' ' ' )
+      echo "rpm -e $rpms" | bash
+      yum install kubeadm-{{ kube_rpm_version }} kubelet-{{ kube_rpm_version }} kubectl-{{ kube_rpm_version }} -y
+

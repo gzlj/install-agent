@@ -1,0 +1,5 @@
+#centos_optimization.yaml  linux-useful-software.yaml  repo.yaml  swap-close.yaml
+- import_tasks: repo.yaml
+- import_tasks: linux-useful-software.yaml
+- import_tasks: centos_optimization.yaml
+- import_tasks: swap-close.yaml

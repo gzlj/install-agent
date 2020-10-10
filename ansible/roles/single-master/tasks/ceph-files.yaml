@@ -1,0 +1,8 @@
+- name: push ceph fs files to remote host 
+  copy:
+    dest: /opt/cephfs-provisioner.tar.gz
+    src: cephfs-provisioner.tar.gz
+- name: push ceph rbd files to remote host
+  copy:
+    dest: /opt/ceph-rbd-provisioner.tar.gz
+    src: ceph-rbd-provisioner.tar.gz

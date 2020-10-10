@@ -1,0 +1,2 @@
+- name: prometheus config
+  shell: docker run --name bu --rm -d -v /opt/prometheus/manifests:/opt/prometheus/manifests gzlj2018/busybox:prometheus-v2.7-conf

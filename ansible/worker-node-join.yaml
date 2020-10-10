@@ -1,0 +1,6 @@
+---
+- hosts: node
+  remote_user: root
+  roles: 
+  - ceph-common
+  - worker-node

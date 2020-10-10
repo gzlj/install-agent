@@ -1,0 +1,26 @@
+---
+#keepalived-haproxy
+- hosts: master
+  remote_user: root
+  roles:
+  - clean
+  - keepalived-haproxy
+  - ceph-common
+- hosts: master1
+  remote_user: root
+  roles: 
+  - ha-master-bootstrap
+- hosts: master23
+  remote_user: root
+  roles: 
+  - ha-master-join
+#- hosts: master3
+#  remote_user: root
+#  roles: 
+#  - ha-master-join
+- hosts: node
+  remote_user: root
+  roles: 
+  - ceph-common
+  - worker-node
+

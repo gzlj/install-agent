@@ -1,0 +1,5 @@
+[registry]
+192.168.26.129 ansible_ssh_port=22 hostname=dn3
+[all:vars]
+kubernetes_version=v1.14.2,v1.14.3
+lan_registry=192.168.26.129:5000

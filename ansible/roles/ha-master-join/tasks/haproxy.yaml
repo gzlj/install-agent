@@ -1,0 +1,74 @@
+- name: yum install haproxy
+  yum: 
+    name: haproxy
+    state: present
+- name: haproxy config file
+  copy:
+    dest: /etc/haproxy/haproxy.cfg
+    content: |
+      global
+          log         127.0.0.1 local2
+          chroot      /var/lib/haproxy
+          pidfile     /var/run/haproxy.pid
+          maxconn     4000
+          user        haproxy
+          group       haproxy
+          daemon
+       
+          # turn on stats unix socket
+          stats socket /var/lib/haproxy/stats
+       
+      #---------------------------------------------------------------------
+      # common defaults that all the 'listen' and 'backend' sections will
+      # use if not designated in their block
+      #---------------------------------------------------------------------
+      defaults
+          mode                    http
+          log                     global
+          option                  httplog
+          option                  dontlognull
+          option http-server-close
+          option forwardfor       except 127.0.0.0/8
+          option                  redispatch
+          retries                 3
+          timeout http-request    10s
+          timeout queue           1m
+          timeout connect         10s
+          timeout client          1m
+          timeout server          1m
+          timeout http-keep-alive 10s
+          timeout check           10s
+          maxconn                 3000
+       
+       
+      #---------------------------------------------------------------------
+      # kubernetes apiserver frontend which proxys to the backends
+      #---------------------------------------------------------------------
+      frontend kubernetes-apiserver
+          mode                 tcp
+          bind                 *:{{ apiserver_lbport | default('16443') }}
+          option               tcplog
+          default_backend      kubernetes-apiserver
+       
+      #---------------------------------------------------------------------
+      # round robin balancing between the various backends
+      #---------------------------------------------------------------------
+      backend kubernetes-apiserver
+          mode        tcp
+          balance     roundrobin
+          server      master1 master1:6443 check
+          server      master2 master2:6443 check
+          server      master3 master3:6443 check
+       
+      #---------------------------------------------------------------------
+      # collection haproxy statistics message
+      #---------------------------------------------------------------------
+      listen stats
+          bind                 *:1080
+          stats auth           admin:awesomePassword
+          stats refresh        5s
+          stats realm          HAProxy\ Statistics
+          stats uri            /admin?stats
+
+- name: restart haproxy
+  systemd: name=haproxy state=restarted daemon_reload=yes

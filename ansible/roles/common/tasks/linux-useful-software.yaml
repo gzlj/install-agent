@@ -1,0 +1,12 @@
+- name: yum install wget net-tools ntpdate vim lrzsz ipvsadm ipset
+  yum:
+    name:
+      - wget
+      - net-tools
+      - ntpdate
+      - vim
+      - lrzsz
+      - ipvsadm
+      - ipset
+      - nfs-utils
+    state: present

@@ -1,0 +1,19 @@
+- name: delete default yum repo file
+  file:
+    path: "/etc/yum.repos.d/{{ item }}"
+    state: absent
+  with_items:
+    - CentOS-Base.repo
+    - CentOS-Debuginfo.repo
+    - CentOS-Media.repo
+    - CentOS-Vault.repo
+    - CentOS-CR.repo
+    - CentOS-fasttrack.repo
+    - CentOS-Sources.repo
+- name: get aliyun Centos-7.repo epel-7.repo
+  get_url:
+    url: "http://mirrors.aliyun.com/repo/{{ item.url }}"
+    dest: "/etc/yum.repos.d/{{ item.dest }}"
+  with_items:
+    - {url: "Centos-7.repo", dest: "CentOS-7.repo"}
+    - {url: "epel-7.repo", dest: "epel-7.repo"}

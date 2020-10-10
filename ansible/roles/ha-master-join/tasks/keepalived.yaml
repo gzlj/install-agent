@@ -1,0 +1,91 @@
+- name: yum install keepalived
+  yum: 
+    name: keepalived
+    state: present
+- name: get interface shell file
+  copy:
+    dest: /tmp/getInterfaceByIp.sh
+    src: /etc/ansible/getInterfaceByIp.sh
+- name: get keepalived interface
+  register: interface
+  shell: bash /tmp/getInterfaceByIp.sh {{ master1_ip }}
+- name: set keepavlied interface var
+  set_fact: lb_interface="{{interface.stdout}}"
+- name: master2 keepalived config file
+  when: master_role == "master2"
+  copy:
+    dest: /etc/keepalived/keepalived.conf
+    content: |
+      ! Configuration File for keepalived
+      
+      global_defs {
+         router_id master1
+         script_user root
+      }
+       
+      
+      vrrp_script check_haproxy {
+          script "/usr/bin/killall -0 haproxy"
+          interval 1
+          weight -20
+          fall 3
+          rise 2
+      }
+       
+      vrrp_instance VI_1 {
+          state BACKUP
+          interface {{ lb_interface }} 
+          virtual_router_id 51
+          priority 99
+          advert_int 1
+          authentication {
+              auth_type PASS
+              auth_pass 1111
+          }
+          virtual_ipaddress {
+              {{ apiserver_lb }}
+          }
+          track_script {
+              check_haproxy
+          }
+      }
+- name: master3 keepalived config file
+  when: master_role == "master3"
+  copy:
+    dest: /etc/keepalived/keepalived.conf
+    content: |
+      ! Configuration File for keepalived
+      
+      global_defs {
+         router_id master1
+         script_user root
+      }
+       
+      
+      vrrp_script check_haproxy {
+          script "/usr/bin/killall -0 haproxy"
+          interval 1
+          weight -20
+          fall 3
+          rise 2
+      }
+
+      vrrp_instance VI_1 {
+          state BACKUP
+          interface {{ lb_interface }}
+          virtual_router_id 51
+          priority 98
+          advert_int 1
+          authentication {
+              auth_type PASS
+              auth_pass 1111
+          }
+          virtual_ipaddress {
+              {{ apiserver_lb }}
+          }
+          track_script {
+              check_haproxy
+          }
+      }
+- name: restart keepalived
+  systemd: name=keepalived state=restarted daemon_reload=yes

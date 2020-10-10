@@ -1,0 +1,32 @@
+---
+- hosts: test
+  remote_user: root
+  tasks:
+  - name: centos_optimization
+    shell: |
+      #/bin/bash
+      systemctl stop firewalld postfix
+      systemctl disable firewalld postfix
+      setenforce 0
+      sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+      yum install ntpdate vim lrzsz -y  
+      if [ $( grep "ntpdate.*cn.pool.ntp.org" /var/spool/cron/root | wc -l ) -eq 0 ]; then
+         echo "*/5 * * * * /usr/sbin/ntpdate cn.pool.ntp.org > /dev/null 2>&1" >> /var/spool/cron/root
+      fi
+      /usr/sbin/ntpdate cn.pool.ntp.org
+      
+      if [ $( grep "docker.*images.*rmi" /var/spool/cron/root | wc -l ) -eq 0 ]; then
+         echo "0 0 * * 0 for i in \$( docker images | sed 1d | awk '{print \$1\":\"\$2}'| grep -v '<none>' ); do docker rmi \$i; done > /dev/null 2>&1" >> /var/spool/cron/root
+      fi
+      
+      #删除悬挂镜像
+      if [ $( grep "docker rmi.*docker images -q -f dangling=true" /var/spool/cron/root | wc -l ) -eq 0 ]; then
+         echo "0 0 * * 0 docker rmi \$( docker images -q -f dangling=true ) > /dev/null 2>&1" >> /var/spool/cron/root
+      fi
+
+      #删除非运行时的容器
+      if [ $( grep "status=exited.*docker rm.*\> /dev/null 2>&1" /var/spool/cron/root | wc -l ) -eq 0 ]; then
+         echo "0 0 * * * for i in \$( docker ps -a -f status=exited | sed 1d | awk '{print \$1}' ); do docker rm \$i; done > /dev/null 2>&1" >> /var/spool/cron/root
+      fi
+         
+

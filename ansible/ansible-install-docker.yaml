@@ -1,0 +1,59 @@
+---
+- hosts: test
+  remote_user: root
+  tasks:
+  - name:  aliyun docker-ce repo
+    get_url:
+      url: http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/
+  - name: yum install docker-ce
+    yum:
+      name: docker-ce-18.06.0.ce-3.el7
+      state: present
+  - name: docker auto start
+    service: name=docker.service state=started enabled=yes
+  - name: docker daemon json file
+    copy:
+      dest: /etc/docker/daemon.json
+      content: |
+        {
+              "registry-mirrors": ["http://65b13f89.m.daocloud.io", "https://registry.docker-cn.com"],
+              "exec-opts": ["native.cgroupdriver=systemd"]
+        }
+  - name: set up docker.service file
+    copy:
+      dest: /usr/lib/systemd/system/docker.service
+      content: |
+        [Unit]
+        Description=Docker Application Container Engine
+        Documentation=https://docs.docker.com
+        After=network-online.target firewalld.service
+        Wants=network-online.target
+        [Service]
+        Type=notify
+        # the default is not to use systemd for cgroups because the delegate issues still
+        # exists and systemd currently does not support the cgroup feature set required
+        # for containers run by docker
+        ExecStart=/usr/bin/dockerd --insecure-registry={{ lan_registry }}
+        ExecReload=/bin/kill -s HUP 
+        # Having non-zero Limit*s causes performance problems due to accounting overhead
+        # in the kernel. We recommend using cgroups to do container-local accounting.
+        LimitNOFILE=infinity
+        LimitNPROC=infinity
+        LimitCORE=infinity
+        # Uncomment TasksMax if your systemd version supports it.
+        # Only systemd 226 and above support this version.
+        #TasksMax=infinity
+        TimeoutStartSec=0
+        # set delegate yes so that systemd does not reset the cgroups of docker containers
+        Delegate=yes
+        # kill only the docker process, not all processes in the cgroup
+        KillMode=process
+        # restart the docker process if it exits prematurely
+        Restart=on-failure
+        StartLimitBurst=3
+        StartLimitInterval=60s
+        [Install]
+        WantedBy=multi-user.target    
+  - name: restart docker
+    systemd: name=docker.service state=restarted daemon_reload=yes

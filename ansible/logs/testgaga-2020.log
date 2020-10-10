@@ -1,0 +1,352 @@
+[WARNING]: Consider using the file module with state=absent rather than running
+'rm'.  If you need to use command because file is insufficient you can add
+'warn: false' to this command task or set 'command_warnings=False' in
+ansible.cfg to get rid of this message.
+[WARNING]: Consider using the yum module rather than running 'yum'.  If you
+need to use command because yum is insufficient you can add 'warn: false' to
+this command task or set 'command_warnings=False' in ansible.cfg to get rid of
+this message.
+[WARNING]: Could not match supplied host pattern, ignoring: node
+r ip to /etc/hosts] ***********************
+changed: [192.168.35.81]
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+
+TASK [keepalived-haproxy : yum install haproxy] ********************************
+ok: [192.168.35.81]
+ok: [192.168.35.80]
+ok: [192.168.35.82]
+
+TASK [keepalived-haproxy : haproxy config file] ********************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+changed: [192.168.35.80]
+
+TASK [keepalived-haproxy : restart haproxy] ************************************
+changed: [192.168.35.81]
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+
+TASK [keepalived-haproxy : yum install haproxy] ********************************
+ok: [192.168.35.81]
+ok: [192.168.35.82]
+ok: [192.168.35.80]
+
+TASK [keepalived-haproxy : get interface shell file] ***************************
+ok: [192.168.35.81]
+ok: [192.168.35.80]
+ok: [192.168.35.82]
+
+TASK [keepalived-haproxy : get keepalived interface] ***************************
+changed: [192.168.35.81]
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+
+TASK [keepalived-haproxy : set keepavlied interface var] ***********************
+ok: [192.168.35.80]
+ok: [192.168.35.81]
+ok: [192.168.35.82]
+
+TASK [keepalived-haproxy : master1 haproxy config file] ************************
+skipping: [192.168.35.81]
+skipping: [192.168.35.82]
+changed: [192.168.35.80]
+
+TASK [keepalived-haproxy : master2 keepalived config file] *********************
+skipping: [192.168.35.80]
+skipping: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [keepalived-haproxy : master3 keepalived config file] *********************
+skipping: [192.168.35.80]
+skipping: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [keepalived-haproxy : restart keepalived] *********************************
+changed: [192.168.35.81]
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+
+TASK [ceph-common : get epel-7.repo] *******************************************
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [ceph-common : install ceph-common] ***************************************
+changed: [192.168.35.80]
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+PLAY [master1] *****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.35.80]
+
+TASK [common : delete default yum repo file] ***********************************
+changed: [192.168.35.80] => (item=CentOS-Base.repo)
+ok: [192.168.35.80] => (item=CentOS-Debuginfo.repo)
+ok: [192.168.35.80] => (item=CentOS-Media.repo)
+ok: [192.168.35.80] => (item=CentOS-Vault.repo)
+ok: [192.168.35.80] => (item=CentOS-CR.repo)
+ok: [192.168.35.80] => (item=CentOS-fasttrack.repo)
+ok: [192.168.35.80] => (item=CentOS-Sources.repo)
+
+TASK [common : get aliyun Centos-7.repo epel-7.repo] ***************************
+ok: [192.168.35.80] => (item={u'url': u'Centos-7.repo', u'dest': u'CentOS-7.repo'})
+ok: [192.168.35.80] => (item={u'url': u'epel-7.repo', u'dest': u'epel-7.repo'})
+
+TASK [common : yum install wget net-tools ntpdate vim lrzsz ipvsadm ipset] *****
+ok: [192.168.35.80]
+
+TASK [common : centos_optimization] ********************************************
+changed: [192.168.35.80]
+
+TASK [common : close swap] *****************************************************
+changed: [192.168.35.80]
+
+TASK [docker : set up /etc/sysctl.d/k8s.conf] **********************************
+ok: [192.168.35.80]
+
+TASK [docker : load kernel modules] ********************************************
+changed: [192.168.35.80]
+
+TASK [docker : aliyun docker-ce repo] ******************************************
+ok: [192.168.35.80]
+
+TASK [docker : clean old docker bin package] ***********************************
+changed: [192.168.35.80]
+
+TASK [docker : yum install docker-ce] ******************************************
+changed: [192.168.35.80]
+
+TASK [docker : set upt /etc/docker dir] ****************************************
+ok: [192.168.35.80]
+
+TASK [docker : push docker config script to remote host] ***********************
+ok: [192.168.35.80]
+
+TASK [docker : docker daemon json file] ****************************************
+changed: [192.168.35.80]
+
+TASK [docker : update xfsprogs] ************************************************
+changed: [192.168.35.80]
+
+TASK [docker : set up docker.service file] *************************************
+changed: [192.168.35.80]
+
+TASK [docker : restart docker] *************************************************
+changed: [192.168.35.80]
+
+TASK [docker : docker auto start] **********************************************
+changed: [192.168.35.80]
+
+TASK [private-registry : set up a private docker registry] *********************
+changed: [192.168.35.80]
+
+TASK [private-registry : download and push k8s docker images] ******************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : set hostname] **************************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : clean k8s] *****************************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : set up aliyun yum kubernetes repo] *****************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : set up k8s rpm version shell file] *****************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : get rpm version by k8s version] ********************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : download and install k8s rpm] **********************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : set up opt dir] ************************************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : download kubeadm binary] ***************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : mv kubeadm binary to /usr/bin/] ********************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : flannel yaml] **************************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : calico yaml] ***************************************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : push monitoring files to remote host] **************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : push app plan files to remote host] ****************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : push ceph fs files to remote host] *****************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : push ceph rbd files to remote host] ****************
+ok: [192.168.35.80]
+
+TASK [ha-master-bootstrap : kubeadm] *******************************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : bootstrap k8s] *************************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : deploy prometheus pods] ****************************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : deploy ceph provisioner pod] ***********************
+changed: [192.168.35.80]
+
+TASK [ha-master-bootstrap : deploy app plan] ***********************************
+changed: [192.168.35.80]
+
+PLAY [master23] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [common : delete default yum repo file] ***********************************
+changed: [192.168.35.82] => (item=CentOS-Base.repo)
+changed: [192.168.35.81] => (item=CentOS-Base.repo)
+ok: [192.168.35.82] => (item=CentOS-Debuginfo.repo)
+ok: [192.168.35.81] => (item=CentOS-Debuginfo.repo)
+ok: [192.168.35.82] => (item=CentOS-Media.repo)
+ok: [192.168.35.81] => (item=CentOS-Media.repo)
+ok: [192.168.35.82] => (item=CentOS-Vault.repo)
+ok: [192.168.35.81] => (item=CentOS-Vault.repo)
+ok: [192.168.35.82] => (item=CentOS-CR.repo)
+ok: [192.168.35.81] => (item=CentOS-CR.repo)
+ok: [192.168.35.82] => (item=CentOS-fasttrack.repo)
+ok: [192.168.35.81] => (item=CentOS-fasttrack.repo)
+ok: [192.168.35.82] => (item=CentOS-Sources.repo)
+ok: [192.168.35.81] => (item=CentOS-Sources.repo)
+
+TASK [common : get aliyun Centos-7.repo epel-7.repo] ***************************
+ok: [192.168.35.82] => (item={u'url': u'Centos-7.repo', u'dest': u'CentOS-7.repo'})
+ok: [192.168.35.81] => (item={u'url': u'Centos-7.repo', u'dest': u'CentOS-7.repo'})
+ok: [192.168.35.82] => (item={u'url': u'epel-7.repo', u'dest': u'epel-7.repo'})
+ok: [192.168.35.81] => (item={u'url': u'epel-7.repo', u'dest': u'epel-7.repo'})
+
+TASK [common : yum install wget net-tools ntpdate vim lrzsz ipvsadm ipset] *****
+ok: [192.168.35.81]
+ok: [192.168.35.82]
+
+TASK [common : centos_optimization] ********************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [common : close swap] *****************************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [docker : set up /etc/sysctl.d/k8s.conf] **********************************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [docker : load kernel modules] ********************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [docker : aliyun docker-ce repo] ******************************************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [docker : clean old docker bin package] ***********************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [docker : yum install docker-ce] ******************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [docker : set upt /etc/docker dir] ****************************************
+ok: [192.168.35.81]
+ok: [192.168.35.82]
+
+TASK [docker : push docker config script to remote host] ***********************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [docker : docker daemon json file] ****************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [docker : update xfsprogs] ************************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [docker : set up docker.service file] *************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [docker : restart docker] *************************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [docker : docker auto start] **********************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [ha-master-join : set hostname] *******************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [ha-master-join : clean k8s] **********************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [ha-master-join : set up aliyun yum kubernetes repo] **********************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [ha-master-join : set up k8s rpm version shell file] **********************
+ok: [192.168.35.81]
+ok: [192.168.35.82]
+
+TASK [ha-master-join : get rpm version by k8s version] *************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [ha-master-join : download and install k8s rpm] ***************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [ha-master-join : set up opt dir] *****************************************
+ok: [192.168.35.82]
+ok: [192.168.35.81]
+
+TASK [ha-master-join : download kubeadm binary] ********************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [ha-master-join : mv kubeadm binary to /usr/bin/] *************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [ha-master-join : ssh public key] *****************************************
+changed: [192.168.35.82]
+changed: [192.168.35.81]
+
+TASK [ha-master-join : join master into k8s] ***********************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+TASK [ha-master-join : restart kubelet] ****************************************
+changed: [192.168.35.81]
+changed: [192.168.35.82]
+
+PLAY [node] ********************************************************************
+skipping: no hosts matched
+
+PLAY RECAP *********************************************************************
+192.168.35.80              : ok=55   changed=35   unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+192.168.35.81              : ok=45   changed=30   unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+192.168.35.82              : ok=45   changed=30   unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+

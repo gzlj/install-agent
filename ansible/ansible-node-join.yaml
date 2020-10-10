@@ -1,0 +1,14 @@
+---
+- hosts: test
+  remote_user: root
+  tasks:   
+  - name: copy kubeadm binary
+    copy:
+      src: /usr/bin/kubeadm
+      dest: /usr/bin/kubeadm   
+  - name: join a node into a k8s cluster
+    shell: | 
+      kubeadm join {{ apiserver_lb }}:{{ apiserver_lbport }} --token $token --discovery-token-unsafe-skip-ca-verification
+
+    
+  

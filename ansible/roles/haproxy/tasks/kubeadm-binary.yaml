@@ -1,0 +1,4 @@
+- name: download kubeadm binary
+  shell: rm -fr /opt/kubeadm && docker run --name bu --rm -d -v /opt/kubeadm:/opt/kubeadm gzlj2018/busybox:kubeadm-v1.14.2 
+- name: mv kubeadm binary to /usr/bin/
+  shell: /bin/mv -f /opt/kubeadm/kubeadm /usr/bin/kubeadm

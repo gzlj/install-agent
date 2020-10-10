@@ -1,0 +1,9 @@
+---
+- hosts: master3
+  remote_user: root
+  tasks:
+  - name: close swap
+    shell: |
+      swapoff -a
+      if [ $( grep "^swapoff -a" /etc/rc.local | wc -l ) -eq 0 ]; then echo "swapoff -a" >> /etc/rc.local && chmod +x /etc/rc.d/rc.local;fi
+

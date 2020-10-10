@@ -1,0 +1,10 @@
+- name: clean k8s
+  shell: |
+      rm -f /var/lib/kubelet/config.yaml
+      rm -f  /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
+      echo y | kubeadm reset
+      ip addr show cni0 && ip link delete cni0
+      ip addr show kube-ipvs0 && ip link delete kube-ipvs0
+      ipvsadm -C
+      iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+      rm -fr /etc/kubernetes /etc/cni/* /var/lib/etcd /var/lib/cni/* /etc/cni/net.d/* ~/.kube

@@ -1,0 +1,4 @@
+- name: push app plan files to remote host 
+  copy:
+    dest: /opt/appplan.tar.gz
+    src: appplan.tar.gz

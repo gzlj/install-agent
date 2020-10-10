@@ -1,0 +1,129 @@
+[WARNING]: Consider using the yum module rather than running 'yum'.  If you
+need to use command because yum is insufficient you can add 'warn: false' to
+this command task or set 'command_warnings=False' in ansible.cfg to get rid of
+this message.
+[WARNING]: Consider using the file module with state=absent rather than running
+'rm'.  If you need to use command because file is insufficient you can add
+'warn: false' to this command task or set 'command_warnings=False' in
+ansible.cfg to get rid of this message.
+[WARNING]: Could not match supplied host pattern, ignoring: node
+8.26.128] => (item=CentOS-Sources.repo)
+
+TASK [common : get aliyun Centos-7.repo epel-7.repo] ***************************
+ok: [192.168.26.128] => (item={u'url': u'Centos-7.repo', u'dest': u'CentOS-7.repo'})
+ok: [192.168.26.128] => (item={u'url': u'epel-7.repo', u'dest': u'epel-7.repo'})
+
+TASK [common : yum install  wget net-tools ntpdate vim lrzsz] ******************
+ok: [192.168.26.128]
+
+TASK [common : centos_optimization] ********************************************
+changed: [192.168.26.128]
+
+TASK [common : close swap] *****************************************************
+changed: [192.168.26.128]
+
+TASK [docker : set up /etc/sysctl.d/k8s.conf] **********************************
+ok: [192.168.26.128]
+
+TASK [docker : load kernel modules] ********************************************
+changed: [192.168.26.128]
+
+TASK [docker : aliyun docker-ce repo] ******************************************
+ok: [192.168.26.128]
+
+TASK [docker : yum install docker-ce] ******************************************
+ok: [192.168.26.128]
+
+TASK [docker : set upt /etc/docker dir] ****************************************
+ok: [192.168.26.128]
+
+TASK [docker : push docker config script to remote host] ***********************
+ok: [192.168.26.128]
+
+TASK [docker : docker daemon json file] ****************************************
+changed: [192.168.26.128]
+
+TASK [docker : update xfsprogs] ************************************************
+changed: [192.168.26.128]
+
+TASK [docker : set up docker.service file] *************************************
+ok: [192.168.26.128]
+
+TASK [docker : restart docker] *************************************************
+changed: [192.168.26.128]
+
+TASK [docker : docker auto start] **********************************************
+ok: [192.168.26.128]
+
+TASK [private-registry : set up a private docker registry] *********************
+changed: [192.168.26.128]
+
+TASK [private-registry : download and push k8s docker images] ******************
+changed: [192.168.26.128]
+
+TASK [single-master : set hostname] ********************************************
+changed: [192.168.26.128]
+
+TASK [single-master : clean keepalived] ****************************************
+changed: [192.168.26.128]
+
+TASK [single-master : clean k8s] ***********************************************
+changed: [192.168.26.128]
+
+TASK [single-master : set up aliyun yum kubernetes repo] ***********************
+ok: [192.168.26.128]
+
+TASK [single-master : set up k8s rpm version shell file] ***********************
+ok: [192.168.26.128]
+
+TASK [single-master : get rpm version by k8s version] **************************
+changed: [192.168.26.128]
+
+TASK [single-master : download and install k8s rpm] ****************************
+changed: [192.168.26.128]
+
+TASK [single-master : set up opt dir] ******************************************
+ok: [192.168.26.128]
+
+TASK [single-master : download kubeadm binary] *********************************
+changed: [192.168.26.128]
+
+TASK [single-master : mv kubeadm binary to /usr/bin/] **************************
+changed: [192.168.26.128]
+
+TASK [single-master : flannel yaml] ********************************************
+ok: [192.168.26.128]
+
+TASK [single-master : calico yaml] *********************************************
+ok: [192.168.26.128]
+
+TASK [single-master : push monitoring files to remote host] ********************
+ok: [192.168.26.128]
+
+TASK [single-master : push app plan files to remote host] **********************
+ok: [192.168.26.128]
+
+TASK [single-master : delete old kubeamd config file] **************************
+changed: [192.168.26.128]
+
+TASK [single-master : kubeadm] *************************************************
+changed: [192.168.26.128]
+
+TASK [single-master : bootstrap k8s] *******************************************
+changed: [192.168.26.128]
+
+TASK [single-master : deploy prometheus pods] **********************************
+changed: [192.168.26.128]
+
+TASK [single-master : deploy app plan] *****************************************
+changed: [192.168.26.128]
+
+TASK [single-master : restart kubelet] *****************************************
+changed: [192.168.26.128]
+
+PLAY [node] ********************************************************************
+skipping: no hosts matched
+
+PLAY RECAP *********************************************************************
+192.168.26.128             : ok=39   changed=21   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

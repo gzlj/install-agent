@@ -1,0 +1,12 @@
+---
+- hosts: master
+  remote_user: root
+  roles: 
+  - ceph-common
+  - single-master 
+- hosts: node
+  remote_user: root
+  roles: 
+  - ceph-common
+  - worker-node
+

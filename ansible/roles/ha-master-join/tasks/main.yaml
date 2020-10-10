@@ -1,0 +1,10 @@
+- import_tasks: hostname.yaml
+- import_tasks: clean-k8s.yaml
+- import_tasks: install-k8s-rpm.yaml
+- import_tasks: set-up-working-dir.yaml
+- import_tasks: kubeadm-binary.yaml
+- import_tasks: get-k8s-ca.yaml
+- import_tasks: master-join.yaml
+#- import_tasks: reset-10-kubeadm.yaml
+- import_tasks: restart-kubelet.yaml
+

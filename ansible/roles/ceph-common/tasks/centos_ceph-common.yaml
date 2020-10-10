@@ -1,0 +1,37 @@
+- name: get epel-7.repo
+  shell: |
+    yum install wget -y
+    wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+    wget -O /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+- name: install ceph-common
+  shell: |
+        cat > /etc/yum.repos.d/ceph.repo << EOF
+        [Ceph]
+        name=Ceph packages for x86_64
+        baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/x86_64
+        enabled=1
+        gpgcheck=0
+        type=rpm-md
+        gpgkey=https://mirrors.aliyun.com/ceph/keys/release.asc
+        priority=1
+          
+        [Ceph-noarch]
+        name=Ceph noarch packages
+        baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/noarch
+        enabled=1
+        gpgcheck=0
+        type=rpm-md
+        gpgkey=https://mirrors.aliyun.com/ceph/keys/release.asc
+        priority=1
+          
+        [ceph-source]
+        name=Ceph source packages
+        baseurl=http://mirrors.aliyun.com/ceph/rpm-nautilus/el7/SRPMS
+        enabled=1
+        gpgcheck=0
+        type=rpm-md
+        gpgkey=https://mirrors.aliyun.com/ceph/keys/release.asc
+        priority=1
+        EOF
+
+        yum install ceph-common -y

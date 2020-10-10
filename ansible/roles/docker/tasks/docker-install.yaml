@@ -1,0 +1,82 @@
+  - name:  aliyun docker-ce repo
+    get_url:
+      url: http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+      dest: /etc/yum.repos.d/
+  - name: clean old docker bin package
+    shell: |
+      rpms=$( rpm -qa | egrep "docker|container" | tr '\n' ' ' )
+      [[ -z "$rpms" ]]  || echo "yum remove -y $rpms" | bash
+  - name: yum install docker-ce
+    yum:
+      name: docker-ce-18.06.0.ce-3.el7
+      state: present
+#  - name: docker auto start
+#    service: name=docker.service state=started enabled=yes
+  - name: set upt /etc/docker dir
+    file: 
+      path: /etc/docker
+      state: directory
+  - name: push docker config script to remote host
+    copy:
+      dest: /tmp/generateDockerConfig.sh
+      src: generateDockerConfig.sh
+  - name: docker daemon json file
+    shell: |
+      bash /tmp/generateDockerConfig.sh --insecure-registries={{ insecure_registries }} --docker-home={{ docker_home | default('/var/lib/docker') }}
+#    copy:
+#      dest: /etc/docker/daemon.json
+#      content: |
+#        {
+#              "registry-mirrors": ["https://bxsfpjcb.mirror.aliyuncs.com", "https://registry.docker-cn.com"],
+#              "max-concurrent-downloads": 10,
+#              "log-driver": "json-file",
+#              "log-level": "warn",
+#              "log-opts": {
+#                  "max-size": "100m",
+#                  "max-file": "3"
+#              },
+#              "exec-opts": ["native.cgroupdriver=systemd"],
+#              "insecure-registries": [ {{ }} ]
+#        }
+  - name: update xfsprogs
+    shell: |
+      yum update xfsprogs -y
+  - name: set up docker.service file
+    copy:
+      dest: /usr/lib/systemd/system/docker.service
+      content: |
+        [Unit]
+        Description=Docker Application Container Engine
+        Documentation=https://docs.docker.com
+        After=network-online.target firewalld.service
+        Wants=network-online.target
+        [Service]
+        Type=notify
+        # the default is not to use systemd for cgroups because the delegate issues still
+        # exists and systemd currently does not support the cgroup feature set required
+        # for containers run by docker
+        ExecStart=/usr/bin/dockerd
+        ExecReload=/bin/kill -s HUP 
+        # Having non-zero Limit*s causes performance problems due to accounting overhead
+        # in the kernel. We recommend using cgroups to do container-local accounting.
+        LimitNOFILE=infinity
+        LimitNPROC=infinity
+        LimitCORE=infinity
+        # Uncomment TasksMax if your systemd version supports it.
+        # Only systemd 226 and above support this version.
+        #TasksMax=infinity
+        TimeoutStartSec=0
+        # set delegate yes so that systemd does not reset the cgroups of docker containers
+        Delegate=yes
+        # kill only the docker process, not all processes in the cgroup
+        KillMode=process
+        # restart the docker process if it exits prematurely
+        Restart=on-failure
+        StartLimitBurst=3
+        StartLimitInterval=60s
+        [Install]
+        WantedBy=multi-user.target    
+  - name: restart docker
+    systemd: name=docker.service state=restarted daemon_reload=yes
+  - name: docker auto start
+    service: name=docker.service state=started enabled=yes

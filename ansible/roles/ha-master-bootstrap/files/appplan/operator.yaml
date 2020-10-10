@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appplan
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: appplan
+  template:
+    metadata:
+      labels:
+        name: appplan
+    spec:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      serviceAccountName: appplan
+      containers:
+        - name: appplan
+          # Replace this with the built image name
+          image: registry.cn-shenzhen.aliyuncs.com/gzlj/appplan:v0.1
+          command:
+          - appplan
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              value: ""
+          #    valueFrom:
+          #      fieldRef:
+          #        fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "appplan"
+          volumeMounts:
+          - mountPath: /etc/localtime
+            name: date-config
+            readOnly: true
+        - name: helm3rest
+          # Replace this with the built image name
+          image: registry.cn-shenzhen.aliyuncs.com/gzlj/helm3rest:v0.1
+          command:
+          - /helm3rest
+          - --kubeConfigFile
+          - /opt/admin.conf
+          volumeMounts:
+          - name: pki
+            mountPath: /opt
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      volumes:
+      - hostPath:
+          path: /etc/kubernetes
+          type: ""
+        name: pki
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: date-config
