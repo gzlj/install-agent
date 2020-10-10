@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func StartTask(c *gin.Context) {
@@ -22,6 +23,11 @@ func StartTask(c *gin.Context) {
 	var err error
 	if err = c.ShouldBindJSON(&dto); err != nil {
 		c.JSON(400, "requet body is not correct.")
+		return
+	}
+
+	if len(dto.JobId) == 0 {
+		c.JSON(200, common.BuildResponse(400, "必须指定jobId.", nil))
 		return
 	}
 
@@ -35,10 +41,14 @@ func StartTask(c *gin.Context) {
 	//bootstrap a k8s
 	//go bootstrapK8s(dto)
 	go startTask(dto)
+	time.Sleep(time.Second)
 	c.JSON(200, common.BuildResponse(200, "Job is starting to run.", nil))
 }
 
 func preWashConfig(config *module.InstallConfig) {
+	if len(config.ApiserverLbport) == 0 {
+		config.ApiserverLbport = "16443"
+	}
 	if config.ControlPlaneEndpoint == "" {
 		if config.JobType == "ha-master-bootstrap" || config.JobType == "worker-node-join" {
 			config.ControlPlaneEndpoint = config.ApiserverLb + ":" + config.ApiserverLbport
@@ -147,7 +157,8 @@ func startTask(config module.InstallConfig) {
 
 		lines = haMasterHostsFileContent(config)
 		//f.WriteString(strings.Join(lines, "\r\n"))
-
+	case "destroy":
+		lines = nodeDestroyHostsFileContent(config)
 	default:
 
 	}
@@ -303,6 +314,7 @@ func singleMasterHostsFileContent(config module.InstallConfig) (lines []string) 
 		"[all:vars]",
 		"master_ip=" + config.Master1Info.Ip,
 		"pod_subnet=" + config.PodSubnet,
+		"service_subnet=" + config.ServiceSubnet,
 		"control_plane_endpoint=" + config.ControlPlaneEndpoint,
 		"token=" + config.Token,
 		"kubernetes_version=" + config.KubernetesVersion,
@@ -311,10 +323,35 @@ func singleMasterHostsFileContent(config module.InstallConfig) (lines []string) 
 	}
 	if config.SetUpPrivateRegistry {
 		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
-		lines = append(lines, "lan_registry="+config.Master1Info.Ip+":"+strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry=" + config.Master1Info.Ip+":"+strconv.Itoa(config.PrivateRegistryPort))
+	} else {
+		lines = append(lines, "lan_registry=" + config.LanRegistry)
+	}
+
+	if len(config.ClusterName) > 0 {
+		lines = append(lines, "cluster_name=" + config.ClusterName)
+	}
+	if len(config.DockerHome) > 0 {
+		lines = append(lines, "docker_home" + config.DockerHome)
+	}
+
+	var insecureRegistries string
+	for _, ir := range config.InsecureRegistries {
+		insecureRegistries = insecureRegistries + ir + ","
+	}
+
+	if config.SetUpPrivateRegistry {
+		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry="+config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+		insecureRegistries = insecureRegistries + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort) + ","
 	} else {
 		lines = append(lines, "lan_registry="+config.LanRegistry)
+		insecureRegistries = insecureRegistries + config.LanRegistry + ","
 	}
+	insecureRegistries = strings.TrimRight(insecureRegistries, ",")
+	lines = append(lines, "insecure_registries=" + insecureRegistries)
+	lines = append(lines, "enable_appplan=" + strconv.FormatBool(! config.DisableAppPlan))
+
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
 		for _, node := range config.NodesToJoin {
@@ -367,6 +404,7 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string) {
 		"kubernetes_version=" + config.KubernetesVersion,
 		"kube_rpm_version=" + config.KubeRpmVersion,
 		"pod_subnet=" + config.PodSubnet,
+		"service_subnet=" + config.ServiceSubnet,
 		"control_plane_endpoint=" + config.ControlPlaneEndpoint,
 		"apiserver_lb=" + config.ApiserverLb,
 		"apiserver_lbport=" + config.ApiserverLbport,
@@ -377,13 +415,29 @@ func haMasterHostsFileContent(config module.InstallConfig) (lines []string) {
 		"master1_password=" + master1Password,
 	}
 
-	if config.SetUpPrivateRegistry {
-		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
-		lines = append(lines, "lan_registry="+config.Master1Info.Ip+":"+strconv.Itoa(config.PrivateRegistryPort))
-	} else {
-		lines = append(lines, "lan_registry="+config.LanRegistry)
+	if len(config.DockerHome) > 0 {
+		lines = append(lines, "docker_home" + config.DockerHome)
 	}
 
+	var insecureRegistries string
+	for _, ir := range config.InsecureRegistries {
+		insecureRegistries = insecureRegistries + ir + ","
+	}
+
+	if config.SetUpPrivateRegistry {
+		lines = append(lines, "private_registry_port="+strconv.Itoa(config.PrivateRegistryPort))
+		lines = append(lines, "lan_registry="+config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort))
+		insecureRegistries = insecureRegistries + config.Master1Info.Ip + ":" + strconv.Itoa(config.PrivateRegistryPort) + ","
+	} else {
+		lines = append(lines, "lan_registry="+config.LanRegistry)
+		insecureRegistries = insecureRegistries + config.LanRegistry + ","
+	}
+	insecureRegistries = strings.TrimRight(insecureRegistries, ",")
+	lines = append(lines, "insecure_registries=" + insecureRegistries)
+	lines = append(lines, "enable_appplan=" + strconv.FormatBool(! config.DisableAppPlan))
+	if len(config.ClusterName) > 0 {
+		lines = append(lines, "cluster_name=" + config.ClusterName)
+	}
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
 		for _, node := range config.NodesToJoin {
@@ -406,10 +460,32 @@ func nodeJoinHostsFileContent(config module.InstallConfig) (lines []string) {
 	if config.Token != "" {
 		lines = append(lines, "token="+config.Token)
 	}
+	if len(config.DockerHome) > 0 {
+		lines = append(lines, "docker_home" + config.DockerHome)
+	}
+	var insecureRegistries string
+	for _, ir := range config.InsecureRegistries {
+		insecureRegistries = insecureRegistries + ir + ","
+	}
+	insecureRegistries = insecureRegistries + config.LanRegistry + ","
+	insecureRegistries = strings.TrimRight(insecureRegistries, ",")
+	lines = append(lines, "insecure_registries=" + insecureRegistries)
 	if len(config.NodesToJoin) > 0 {
 		lines = append(lines, "[node]")
 		for _, node := range config.NodesToJoin {
 			s := node.Ip + " ansible_ssh_port=" + strconv.Itoa(node.SshPort) + " hostname=" + node.Hostname
+			lines = append(lines, s)
+		}
+	}
+	return
+}
+
+func nodeDestroyHostsFileContent(config module.InstallConfig) (lines []string) {
+	lines = []string{}
+	if len(config.NodesToDestroy) > 0 {
+		lines = append(lines, "[destroynode]")
+		for _, node := range config.NodesToDestroy {
+			s := node.Ip + " ansible_ssh_port=" + strconv.Itoa(node.SshPort)
 			lines = append(lines, s)
 		}
 	}
@@ -466,8 +542,13 @@ func constructFilesAndCmd(config module.InstallConfig) (filesAndCmds common.Task
 
 	case "ha-master-join":
 		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.HA_MASTER_JOIN_YAML_FILE + " -i " + filesAndCmds.HostsFile
+	case "destroy":
+		filesAndCmds.CoreCmdStr = "ansible-playbook " + common.WOKER_NODE_DESTROY_YAML_FILE + " -i " + filesAndCmds.HostsFile
+		for _, node := range config.NodesToDestroy {
+			targeHosts = append(targeHosts, node.Ip)
+		}
 	default:
-		err = errors.New("Job type must be one of single-master-bootstrap, worker-node-join, ha-master-bootstrap, ha-master-join.")
+		err = errors.New("Job type must be one of single-master-bootstrap, worker-node-join, ha-master-bootstrap, ha-master-join, destroy.")
 	}
 	if config.JobType == "ha-master-bootstrap" || config.JobType == "single-master-bootstrap" {
 		filesAndCmds.KubeconfigCmdStr = "ansible " + config.Master1Info.Ip + " -m fetch -a 'src=/etc/kubernetes/admin.conf flat=yes dest=" + common.STATUS_DIR + config.JobId + ".kubeconfig'" + " -i " + filesAndCmds.HostsFile
@@ -700,3 +781,5 @@ func CancelJob(c *gin.Context) {
 	}
 	c.JSON(200, common.BuildResponse(200, "Job cancled.", nil))
 }
+
+

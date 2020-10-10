@@ -20,7 +20,15 @@ func QueryJobStatus(c *gin.Context) {
 		err    error
 	)
 	jobId := c.Query("jobId")
-
+	if len(jobId) == 0 {
+		status = common.Status{
+			Code: 400,
+			Err:  "必须指定jobId.",
+			Id:   jobId,
+		}
+		c.JSON(200, status)
+		return
+	}
 	status, err = queryJobStatus(jobId)
 	if err != nil {
 		status = common.Status{
@@ -143,7 +151,7 @@ func CreateStatusFile(jobId string) (err error) {
 
 	status = common.Status{
 		Code:  200,
-		Err:   "failed to start task.",
+		Err:   "",
 		Phase: "created",
 		Id:    jobId,
 	}
@@ -176,6 +184,8 @@ func UpdateStatusFile(status common.Status) (err error) {
 		case "ha-master-bootstrap":
 			status.Progress = process * 100 / common.HA_MASTER_JOB_TASK_COUNT
 		case "ha-master-join":
+		case "destroy":
+			status.Progress = process * 100 / common.WORKER_NODE_DESTROY_JOB_TASK_COUNT
 		default:
 		}
 	}

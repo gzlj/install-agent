@@ -39,14 +39,19 @@ const (
 	HA_MASTER3_JOIN_YAML_FILE = WORKING_DIR + "ha-master3-join.yaml"
 	HA_MASTER_JOIN_YAML_FILE = WORKING_DIR + "ha-master-join.yaml"
 
+
 	//single-master-bootstrap.yaml
 	SINGLE_MASTER_BOOTSTRAP_YAML_FILE = WORKING_DIR + "/single-master-bootstrap.yaml"
 	//worker-node-join.yaml
 	WOKER_NODE_JOIN_YAML_FILE = WORKING_DIR + "/worker-node-join.yaml"
 
-	SINGEL_MASTER_JOB_TASK_COUNT = 40
-	HA_MASTER_JOB_TASK_COUNT = 80
-	WORKER_NODE_JOIN_JOB_TASK_COUNT = 35
+	WOKER_NODE_DESTROY_YAML_FILE = WORKING_DIR + "/destroy-node.yaml"
+
+	SINGEL_MASTER_JOB_TASK_COUNT = 45
+	HA_MASTER_JOB_TASK_COUNT = 85
+	WORKER_NODE_JOIN_JOB_TASK_COUNT = 40
+
+	WORKER_NODE_DESTROY_JOB_TASK_COUNT = 3
 )
 
 var (

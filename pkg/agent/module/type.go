@@ -28,6 +28,7 @@ type InstallConfig struct {
 	//CreatedAt time.Time `json:"createdAt"`
 	//UpdatedAt time.Time `json:"updatedAt"`
 	JobId                string `json:"jobId"`
+	ClusterName string `json:"clusterName"`
 	IsHa                 bool   `json:"isHa"`
 	LanRegistry          string `json:"lanRegistry"`
 	MasterIp             string `json:"masterIp"`
@@ -48,10 +49,15 @@ type InstallConfig struct {
 	NodesToJoin  []NodeInfo `json:"nodesToJoin"`
 	SetUpPrivateRegistry bool `json:"setUpPrivateRegistry"`
 	PrivateRegistryPort int `json:"privateRegistryPort"`
+	InsecureRegistries []string `json:"insecureRegistries"`
+	DisableAppPlan bool `json:"disableAppPlan"`
+	DockerHome string `json:"dockerHome"`
 
 	Master1Info NodeInfo `json:"master1Info"`
 	Master2Info NodeInfo `json:"master2Info"`
 	Master3Info NodeInfo `json:"master3Info"`
+
+	NodesToDestroy  []NodeInfo `json:"nodesToDestroy"`
 
 }
 

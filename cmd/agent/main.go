@@ -54,7 +54,7 @@ func registryBootstrap(r *gin.Engine) {
 	r.GET("/status",handle.QueryJobStatus)
 	r.GET("/config",handle.ShowConfig)
 	r.GET("/liststatus",handle.ListJobStatuses)
-	r.POST("/cancle", handle.CancelJob)
+	r.POST("/cancel", handle.CancelJob)
 	//r.GET("/updatestatus",handle.UpdateJobStatuse)
 	//r.GET("/count",handle.GetJobProcess)
 }

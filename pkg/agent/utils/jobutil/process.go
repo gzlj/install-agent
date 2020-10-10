@@ -167,7 +167,12 @@ func updateJobProcessInMemory(jobId string) (err error) {
 	case "ha-master-bootstrap":
 		status.Progress = process * 100 / common.HA_MASTER_JOB_TASK_COUNT
 	case "ha-master-join":
+	case "destroy":
+		status.Progress = process * 100 / common.WORKER_NODE_DESTROY_JOB_TASK_COUNT
 	default:
+	}
+	if status.Progress > 100 {
+		status.Progress = 99
 	}
 	return
 }
